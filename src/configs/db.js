@@ -5,7 +5,7 @@ const connectDB = async () => {
 	try {
 		const connected = await mongoose.connect(DB_URI);
 		console.log(
-			`Connected MongoDB: mongodb://${connected.connection.host}:${connected.connection.port}/${connected.connection.name}`
+			`Kết nối thành công MongoDB: mongodb://${connected.connection.host}:${connected.connection.port}/${connected.connection.name}`
 		);
 	} catch (error) {
 		console.error(`Error: ${error.message}`);
