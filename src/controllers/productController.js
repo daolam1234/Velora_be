@@ -13,6 +13,22 @@ import  Product  from '../models/Product.js';
   }
 };
 
+export const getProductsByCategory = async (req, res) => {
+  const { categoryId } = req.params;
+
+  try {
+    const products = await Product.find({ category_id: categoryId });
+
+    if (!products || products.length === 0) {
+      return res.status(404).json({ message: "Không có sản phẩm trong danh mục này" });
+    }
+
+    return res.status(200).json(products);
+  } catch (error) {
+    return res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
 
 export const getProductDetail = async (req, res) => {
     const { id } = req.params;
