@@ -22,22 +22,37 @@ const addressSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema(
 	{
-		fullname: {
+		username: {
 			type: String,
 			required: true,
 		},
-		email: {},
-		password: {},
-		phoneNumber: {},
-		address: [
-			{
-				type: addressSchema,
-				required: true,
-			},
-		],
+		password: {
+			type: String,
+			required: true,
+		},
+		email: {
+			type: String,
+			required: true,
+		},
+		full_name: {
+			type: String,
+			required: true,
+		},
+		phone: {
+			type: String,
+			required: true,
+		},
+		address: {
+			type: String,
+			required: true,
+		},
+		role_id: {
+			type: String,
+			// required: true,
+			default: 'user',
+		},
 	},
-
-	{ timestamps: true, versionKey: false }
+	{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, versionKey: false }
 );
 
 const User = mongoose.model("User", userSchema);
