@@ -100,20 +100,35 @@ export const getDeletedVariants = async (req, res) => {
 };
 
 
+
+
 export const createVariant = async (req, res) => {
   try {
-       const { error } = createVariantSchema.validate(req.body);
+    // Validate dữ liệu
+    const { error } = createVariantSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ message: 'Dữ liệu không hợp lệ', details: error.details });
+      return res.status(400).json({
+        message: "Dữ liệu không hợp lệ",
+        details: error.details,
+      });
     }
 
+    // Tạo biến thể mới
     const newVariant = new ProductVariant(req.body);
     await newVariant.save();
-    return res.status(201).json({ message: 'Tạo biến thể thành công', variant: newVariant });
+
+    return res.status(201).json({
+      message: "Tạo biến thể thành công",
+      variant: newVariant,
+    });
   } catch (error) {
-    return res.status(500).json({ message: 'Lỗi server', error: error.message });
+    return res.status(500).json({
+      message: "Lỗi server",
+      error: error.message,
+    });
   }
 };
+
 
 export const updateVariant = async (req, res) => {
   const { id } = req.params;
