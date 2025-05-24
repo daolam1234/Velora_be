@@ -39,7 +39,7 @@ export const login = async (req, res) => {
             return res.status(400).json({message: "Mật khẩu không chính xác"});
         }
         const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: '1h'});
-        return res.status(200).json({message: "Đăng nhập thành công", token});
+        return res.status(200).json({message: "Đăng nhập thành công", token ,'user': user});
 
     } catch (error) {
         return res.status(400).json({message: "Lỗi server", error: error.message});
