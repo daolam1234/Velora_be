@@ -4,6 +4,7 @@ import categoryRouter from "./categoryRouter.js";
 import authRouter from "./authRouter.js";
 import productImageRouter from "./productImageRoutes.js";
 
+
 const routes = Router();
 
 routes.use("/products", productRouter)
