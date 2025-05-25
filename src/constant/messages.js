@@ -29,6 +29,7 @@ export const AUTH_MESSAGES = {
   USER_NOT_FOUND: "Không tìm thấy người dùng",
   ACCOUNT_BANNED: "Tài khoản của bạn đã bị cấm.",
   ACCOUNT_INACTIVE: "Tài khoản của bạn chưa được kích hoạt.",
+
   CREATE_SUCCESS: "Tạo tài khoản thành công",
   UPDATE_SUCCESS: "Cập nhật tài khoản thành công",
   DELETE_SUCCESS: "Xóa tài khoản thành công",
