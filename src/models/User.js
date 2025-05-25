@@ -1,4 +1,4 @@
-import { de } from "@faker-js/faker";
+// import { de } from "@faker-js/faker";
 import mongoose from "mongoose";
 
 
@@ -28,10 +28,11 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		role_id: {
+		role: {
 			type: String,
-			// required: true,
-			default: 'user',
+			enum: ["admin", "customer", "staff"], 
+			default: 'customer',
+			required: true,
 		},
 	},
 	{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, versionKey: false }
