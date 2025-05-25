@@ -8,5 +8,4 @@ routes.use("/categories", categoryRouter)
 // routes.use("/products", hanldeProduct...)
 // routes.use("/products", hanldeProduct...)
 // routes.use("/products", hanldeProduct...)
-
 export default routes;
