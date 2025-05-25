@@ -1,64 +1,75 @@
-import  Product  from '../models/Product.js';
+import Product from '../models/Product.js';
 
- export const getProducts = async (req,res) => {
+export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find(); // lấy tất cả sản phẩm
-	if(!products){
-    return res.status(400).json({message:"ko ton tai trang"})
-	}
-	return res.status(200).json(products)
+    const products = await Product.find();
+    if (!products) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({ message: messages.PRODUCT_MESSAGES.NOT_FOUND });
+    }
+    return res.status(STATUS_CODES.OK).json(products)
   } catch (error) {
-       return res.status(500).json({message:"loi server"})
+    return res.status(STATUS_CODES.SERVER_ERROR).json({ message: messages.PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
 
+  }
+};
+
+export const getProductsByCategory = async (req, res) => {
+  const { categoryId } = req.params;
+
+  try {
+    const products = await Product.find({ category_id: categoryId });
+
+    if (!products || products.length === 0) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({ message: messages.PRODUCT_MESSAGES.NOT_FOUND_IN_CATEGORY });
+    }
+
+    return res.status(STATUS_CODES.OK).json(products);
+  } catch (error) {
+    return res.status(STATUS_CODES.SERVER_ERROR).json({ message: messages.PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 
 
 export const getProductDetail = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    try {
-        const product = await Product.findOne({_id: id });
+  try {
+    const product = await Product.findOne({ _id: id });
 
-        if (!product) {
-            return res.status(404).json({ message: "Không có sản phẩm" });
-        }
-
-        res.status(200).json(product);
-    } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error: error.message });
+    if (!product) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({ message: messages.PRODUCT_MESSAGES.NOT_FOUND });
     }
+
+    res.status(STATUS_CODES.OK).json(product);
+  } catch (error) {
+    res.status(STATUS_CODES.SERVER_ERROR).json({ message: messages.PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
+  }
 };
 
 export const createProduct = async (req, res) => {
   const {
     _id,
     name,
-    category_id, 
+    category_id,
     description,
     price,
     stock_quantity,
     image_url,
     is_available,
   } = req.body;
-console.log("BODY:", req.body);
-
+  console.log("BODY:", req.body);
+  if (!name || !category_id || !price) {
+    return res.status(STATUS_CODES.BAD_REQUEST).json({ message: messages.PRODUCT_MESSAGES.SERVER_ERROR });
+  }
   try {
     const newProduct = new Product({
-      _id,
-      name,
-      category_id,
-      description,
-      price,
-      stock_quantity,
-      image_url,
-      is_available,
+      ...req.body,
     });
 
     await newProduct.save();
-    res.status(201).json({ message: "Tạo sản phẩm thành công", product: newProduct });
+    res.status(STATUS_CODES.CREATED).json({ message: messages.PRODUCT_MESSAGES.CREATE_SUCCESS, product: newProduct });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(STATUS_CODES.SERVER_ERROR).json({ message: messages.PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 
@@ -71,12 +82,12 @@ export const updateProduct = async (req, res) => {
     const updatedProduct = await Product.findByIdAndUpdate(id, updateData, { new: true });
 
     if (!updatedProduct) {
-      return res.status(404).json({ message: "Không có sản phẩm" });
+      return res.status(STATUS_CODES.NOT_FOUND).json({ message: messages.PRODUCT_MESSAGES.NOT_FOUND });
     }
 
-    res.status(200).json({ message: "Cập nhật sản phẩm thành công", product: updatedProduct });
+    res.status(STATUS_CODES.OK).json({ message: messages.PRODUCT_MESSAGES.UPDATE_SUCCESS, product: updatedProduct });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(STATUS_CODES.SERVER_ERROR).json({ message: messages.PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 
@@ -88,12 +99,12 @@ export const deleteProduct = async (req, res) => {
     const deletedProduct = await Product.findByIdAndDelete(id);
 
     if (!deletedProduct) {
-      return res.status(404).json({ message: "Không có sản phẩm" });
+      return res.status(STATUS_CODES.NOT_FOUND).json({ message: messages.PRODUCT_MESSAGES.NOT_FOUND });
     }
 
-    res.status(200).json({ message: "Xóa sản phẩm thành công", product: deletedProduct });
+    res.status(STATUS_CODES.OK).json({ message: messages.PRODUCT_MESSAGES.DELETE_SUCCESS, product: deletedProduct });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(STATUS_CODES.SERVER_ERROR).json({ message: messages.PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 
