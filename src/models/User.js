@@ -1,4 +1,4 @@
-import { de } from "@faker-js/faker";
+// import { de } from "@faker-js/faker";
 import mongoose from "mongoose";
 
 
