@@ -1,24 +1,6 @@
 import { de } from "@faker-js/faker";
 import mongoose from "mongoose";
 
-const addressSchema = new mongoose.Schema({
-	city: {
-		type: String,
-		required: true,
-	},
-	district: {
-		type: String,
-		required: true,
-	},
-	detail: {
-		type: String,
-		required: true,
-	},
-	default: {
-		type: Boolean,
-		default: false,
-	},
-});
 
 const userSchema = new mongoose.Schema(
 	{
