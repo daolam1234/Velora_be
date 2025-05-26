@@ -1,24 +1,6 @@
-import { de } from "@faker-js/faker";
+// import { de } from "@faker-js/faker";
 import mongoose from "mongoose";
 
-const addressSchema = new mongoose.Schema({
-	city: {
-		type: String,
-		required: true,
-	},
-	district: {
-		type: String,
-		required: true,
-	},
-	detail: {
-		type: String,
-		required: true,
-	},
-	default: {
-		type: Boolean,
-		default: false,
-	},
-});
 
 const userSchema = new mongoose.Schema(
 	{
@@ -50,6 +32,7 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			enum: ['customer', 'admin'],
 			default: 'customer',
+
 		},
 	},
 	{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, versionKey: false }

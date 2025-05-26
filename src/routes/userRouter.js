@@ -1,7 +1,7 @@
-import { Router } from "express";
-import { getUser } from "../controllers/userController.js";
+// import { Router } from "express";
+// import { getUser } from "../controllers/userController.js";
 
-const userRouter = Router();
-userRouter.get("/", getUser);
+// const userRouter = Router();
+// userRouter.get("/", getUser);
 
-export default userRouter;
+// export default userRouter;
