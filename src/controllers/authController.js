@@ -42,7 +42,7 @@ export const login = async (req, res) => {
             return res.status(STATUS_CODES.BAD_REQUEST).json({ message:AUTH_MESSAGES.INVALID_PASSWORD });
         }
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        return res.status(STATUS_CODES.OK).json({ message:AUTH_MESSAGES.LOGIN_SUCCESS, token });
+        return res.status(STATUS_CODES.OK).json({ message:AUTH_MESSAGES.LOGIN_SUCCESS, token , user});
 
     } catch (error) {
         return res.status(STATUS_CODES.SERVER_ERROR).json({ message:AUTH_MESSAGES.SERVER_ERROR, error: error.message });
