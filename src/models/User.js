@@ -30,9 +30,9 @@ const userSchema = new mongoose.Schema(
 		},
 		role: {
 			type: String,
-			enum: ["admin", "customer", "staff"], 
+			enum: ['customer', 'admin'],
 			default: 'customer',
-			required: true,
+
 		},
 	},
 	{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, versionKey: false }
