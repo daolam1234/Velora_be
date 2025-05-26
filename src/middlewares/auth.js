@@ -24,7 +24,7 @@ export const verifyToken = async (req, res, next) => {
 
 export const verifyAdmin = async (req, res, next) => {
     try {
-        if (req.user.role_id !== 'admin') {
+        if (req.user.role !== 'admin') {
             return res.status(403).json({ message: "Bạn không có quyền truy cập" });
         }
         next();

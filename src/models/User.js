@@ -46,10 +46,10 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		role_id: {
+		role: {
 			type: String,
-			// required: true,
-			default: 'user',
+			enum: ['customer', 'admin'],
+			default: 'customer',
 		},
 	},
 	{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, versionKey: false }
