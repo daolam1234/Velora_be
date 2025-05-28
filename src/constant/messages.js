@@ -3,7 +3,7 @@ export const PRODUCT_MESSAGES = {
   NOT_FOUND_IN_CATEGORY: "Không có sản phẩm trong danh mục này",
   CREATE_SUCCESS: "Tạo sản phẩm thành công",
   UPDATE_SUCCESS: "Cập nhật sản phẩm thành công",
-  DELETE_SUCCESS: "Xóa sản phẩm thành công",
+  DELETE_SUCCESS: "Xóa sản phẩm thành công (xóa mềm)",
   SERVER_ERROR: "Lỗi server",
   PAGE_NOT_EXIST: "Không tồn tại trang",
 };
