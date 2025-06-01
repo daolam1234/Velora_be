@@ -33,3 +33,10 @@ export const AUTH_MESSAGES = {
   SERVER_ERROR: "Lỗi server",
   PAGE_NOT_EXIST: "Không tồn tại trang",
 };
+
+export const WISHLIST_MESSAGES = {
+  NOT_FOUND: "Không tìm thấy sản phẩm yêu thích",
+  WISHLIST_EXISTS: "Đã có trong danh sách yêu thích",
+  DELETE_SUCCESS: "Xóa sản phẩm yêu thích thành công",
+  SERVER_ERROR: "Lỗi server"
+};
