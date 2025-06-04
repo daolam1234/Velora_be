@@ -3,7 +3,7 @@ export const PRODUCT_MESSAGES = {
   NOT_FOUND_IN_CATEGORY: "Không có sản phẩm trong danh mục này",
   CREATE_SUCCESS: "Tạo sản phẩm thành công",
   UPDATE_SUCCESS: "Cập nhật sản phẩm thành công",
-  DELETE_SUCCESS: "Xóa sản phẩm thành công",
+  DELETE_SUCCESS: "Xóa sản phẩm thành công (xóa mềm)",
   SERVER_ERROR: "Lỗi server",
   PAGE_NOT_EXIST: "Không tồn tại trang",
 };
@@ -32,4 +32,11 @@ export const AUTH_MESSAGES = {
   DELETE_SUCCESS: "Xóa tài khoản thành công",
   SERVER_ERROR: "Lỗi server",
   PAGE_NOT_EXIST: "Không tồn tại trang",
+};
+
+export const WISHLIST_MESSAGES = {
+  NOT_FOUND: "Không tìm thấy sản phẩm yêu thích",
+  WISHLIST_EXISTS: "Đã có trong danh sách yêu thích",
+  DELETE_SUCCESS: "Xóa sản phẩm yêu thích thành công",
+  SERVER_ERROR: "Lỗi server"
 };

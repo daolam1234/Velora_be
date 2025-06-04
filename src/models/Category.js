@@ -11,13 +11,9 @@ const categorySchema = new mongoose.Schema(
     description: {
       type: String,
     },
-    image_url: {
-      type: String,
-      maxlength: 255,
-    },
-    is_active: {
+    isDeleted: {
       type: Boolean,
-      default: true,
+      default: false,
     },
   },
   {
