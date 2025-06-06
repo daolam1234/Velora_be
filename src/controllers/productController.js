@@ -70,18 +70,14 @@ export const getProductsByCategory = async (req, res) => {
       isDeleted: false,
     }).populate("category_id");
 
-    if (products.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Không có sản phẩm nào trong danh mục này",
-        data: [],
-      });
-    }
+  
 
     return res.status(200).json({
       success: true,
-      message: "Lấy sản phẩm theo danh mục thành công",
-      data: products,
+      message: products.length === 0 
+        ? "Không có sản phẩm nào trong danh mục này" 
+        : "Lấy sản phẩm theo danh mục thành công",
+      data: products,   
     });
   } catch (error) {
     console.error("Lỗi truy vấn:", error);
