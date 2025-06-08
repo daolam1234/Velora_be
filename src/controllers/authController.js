@@ -37,6 +37,15 @@ export const login = async (req, res) => {
         if (!user) {
             return res.status(STATUS_CODES.NOT_FOUND).json({ message:AUTH_MESSAGES.USER_NOT_FOUND });
         }
+
+        if (user.status === 'banned') {
+            return res.status(STATUS_CODES.FORBIDDEN).json({ message: AUTH_MESSAGES.ACCOUNT_BANNED });
+        }
+
+        if (user.status === 'unactive') {
+            return res.status(STATUS_CODES.UNAUTHORIZED).json({ message: AUTH_MESSAGES.ACCOUNT_INACTIVE });
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(STATUS_CODES.BAD_REQUEST).json({ message:AUTH_MESSAGES.INVALID_PASSWORD });
