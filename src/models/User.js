@@ -34,6 +34,11 @@ const userSchema = new mongoose.Schema(
 			default: 'customer',
 
 		},
+		status:{
+			type: String,
+			enum: ['active', 'unactive', 'banned'],
+			default: 'active',
+		}
 	},
 	{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, versionKey: false }
 );
