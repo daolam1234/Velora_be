@@ -1,9 +1,11 @@
 import { Router } from "express";
-import { getUser, updateUser, getDetailUser } from "../controllers/userController.js";
+import { getUser, updateUser, getDetailUser, updateUserStatus, updatePassword } from "../controllers/userController.js";
 
 const userRouter = Router();
 userRouter.get("/", getUser);
 userRouter.get("/:id", getDetailUser);
-userRouter.patch("/:id", updateUser);
+userRouter.patch("/updateStatus/:id", updateUserStatus);
+userRouter.patch("/update/:id",updateUser);
+userRouter.patch("/update-password/:id", updatePassword);
 
 export default userRouter;
