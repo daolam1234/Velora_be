@@ -6,9 +6,12 @@ import { createVariantSchema, updateVariantSchema } from '../validation/productV
 
 export const getProductVariants = async (req, res) => {
   try {
-    const { product_id, page = 1, limit = 10, isDeleted } = req.query;
+    const { product_id, color ,page = 1, limit = 10, isDeleted } = req.query;
 
     const filter = {};
+     if (color) {
+     filter.color = color;
+      }
     if (product_id && mongoose.Types.ObjectId.isValid(product_id)) {
       filter.product_id = product_id;
     }

@@ -6,49 +6,103 @@ import { productSchema } from '../validation/product.js';
 
 export const getProducts = async (req, res) => {
   try {
-     const { search , page = 1 , limit = 10 , isDelete } = req.query;
-    
-     let filter = {};
-    
-    if(isDelete === "true"){
-      filter.isDeleted = true
-    }else {
-       filter.isDeleted = false
+    const {
+      search,
+      page = 1,
+      limit = 10,
+      isDelete,
+      size,
+      color,
+      brand,
+      origin,
+      minPrice,
+      maxPrice,
+    } = req.query;
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    let match = {
+      isDeleted: isDelete === "true",
+    };
+
+    if (search) {
+      match.name = { $regex: search, $options: "i" };
     }
 
-    if(search){
-       filter.name = { $regex: search , $options: "i"};
+    if (brand) {
+      match.brand = brand;
     }
 
-    const pageNumber = parseInt(page) || 1;
-    const limitNumber = parseInt(limit) || 10;
-    const skip = (pageNumber - 1 ) * limitNumber;
-
-    const totalItem = await Product.countDocuments(filter);
-
-    if(totalItem === 0) {
-      return res.status(STATUS_CODES.NOT_FOUND).json({message: PRODUCT_MESSAGES.NOT_FOUND})
+    if (origin) {
+      match.origin = origin;
     }
 
-    const products = await Product.find(filter)
-    .populate("category_id")
-    .skip(skip)
-    .limit(limitNumber);
+    const pipeline = [
+      {
+        $lookup: {
+          from: "productvariants", // Collection name in MongoDB
+          localField: "_id",
+          foreignField: "product_id",
+          as: "variants",
+        },
+      },
+      {
+        $match: match,
+      },
+    ];
+
+    // Thêm điều kiện lọc theo biến thể nếu có
+    if (size || color || minPrice || maxPrice) {
+      let variantMatch = {};
+
+      if (size) {
+        variantMatch["variants.size"] = size;
+      }
+
+      if (color) {
+        variantMatch["variants.color"] = color;
+      }
+
+      if (minPrice || maxPrice) {
+        variantMatch["variants.price"] = {};
+        if (minPrice) variantMatch["variants.price"].$gte = parseFloat(minPrice);
+        if (maxPrice) variantMatch["variants.price"].$lte = parseFloat(maxPrice);
+      }
+
+      pipeline.push({
+        $match: variantMatch,
+      });
+    }
+
+    pipeline.push(
+      { $skip: skip },
+      { $limit: limitNumber }
+    );
+
+    const products = await Product.aggregate(pipeline);
+
+    const totalItem = products.length;
 
     return res.status(STATUS_CODES.OK).json({
-        success: true,
-        products,
-        paginaiton: {
-          totalItem,
-          totalPages: Math.ceil(totalItem / limitNumber),
-          currentPage: pageNumber,
-          pageSize: limitNumber
-        }
-    })
+      success: true,
+      products,
+      pagination: {
+        totalItem,
+        totalPages: Math.ceil(totalItem / limitNumber),
+        currentPage: pageNumber,
+        pageSize: limitNumber,
+      },
+    });
   } catch (error) {
-    return res.status(STATUS_CODES.SERVER_ERROR).json({ message:PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
+    return res.status(STATUS_CODES.SERVER_ERROR).json({
+      message: PRODUCT_MESSAGES.SERVER_ERROR,
+      error: error.message,
+    });
   }
 };
+
 
 
 export const getProductsByCategory = async (req, res) => {

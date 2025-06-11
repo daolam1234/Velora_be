@@ -11,6 +11,19 @@ const productVariantSchema = new mongoose.Schema({
     required: true,
     maxlength: 10
   },
+  color: {
+    type: String,
+    required: true,
+    maxlength: 50
+  },
+  image: {
+    type: String, // Ảnh đại diện thumbnail
+    required: true
+  },
+  images: {
+    type: [String], // Danh sách các ảnh con
+    default: []
+  },
   sku: {
     type: String,
     required: true,
@@ -20,6 +33,10 @@ const productVariantSchema = new mongoose.Schema({
   price: {
     type: Number,
     required: true,
+    min: 0
+  },
+   discount_price: {
+    type: Number,
     min: 0
   },
   stock_quantity: {

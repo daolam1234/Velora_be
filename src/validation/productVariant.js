@@ -9,6 +9,9 @@ export const createVariantSchema = Joi.object({
   size: Joi.string()
     .max(10)
     .required(),
+  color: Joi.string().max(50).required(),
+  image: Joi.string().uri().required(),
+  images: Joi.array().items(Joi.string().uri()).optional(),
 
   sku: Joi.string()
     .max(100)
@@ -17,6 +20,7 @@ export const createVariantSchema = Joi.object({
   price: Joi.number()
     .min(0)
     .required(),
+  discount_price: Joi.number().min(0).optional(),
 
   stock_quantity: Joi.number()
     .integer()
@@ -37,6 +41,9 @@ export const updateVariantSchema = Joi.object({
   size: Joi.string()
     .max(10)
     .optional(),
+color: Joi.string().max(50).required(),
+image: Joi.string().uri().required(),
+  images: Joi.array().items(Joi.string().uri()).optional(),
 
   sku: Joi.string()
     .max(100)
@@ -45,6 +52,7 @@ export const updateVariantSchema = Joi.object({
   price: Joi.number()
     .min(0)
     .optional(),
+  discount_price: Joi.number().min(0).optional(),
 
   stock_quantity: Joi.number()
     .integer()
