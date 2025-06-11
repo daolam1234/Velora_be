@@ -1,7 +1,7 @@
 import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
 import { sendSuccess } from "../middlewares/success.middleware.js";
-import { CART_MESSAGES } from "../constant/messages";
+import { CART_MESSAGES } from "../constant/messages.js";
 import ProductVariant from "../models/ProductVariant.js";
 import { STATUS_CODES } from "../constant/statusCodes.js";
 
