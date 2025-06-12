@@ -113,11 +113,10 @@ export const addToCart = async (req, res, next) => {
         path: "items.product",
         select: "name price discount_price images variation_status stock_quantity"
       })
-      .populate({
-        path: "items.variant",
-        select: "size price stock_quantity"
-      });
-
+    .populate({
+  path: "items.variant",
+  select: "size price stock_quantity sku color discount_price image images"
+});
     // Thêm thông tin chi tiết biến thể vào phản hồi
     const cartWithVariantDetails = populatedCart.items.map(item => {
         const product = item.product;
@@ -234,10 +233,10 @@ export const updateCartItem = async (req, res, next) => {
         path: "items.product",
         select: "name price discount_price images variation_status stock_quantity"
       })
-      .populate({
-        path: "items.variant",
-        select: "size price stock_quantity"
-      });
+       .populate({
+  path: "items.variant",
+  select: "size price stock_quantity sku color discount_price image images"
+});
 
     sendSuccess(res, populatedCart, CART_MESSAGES.UPDATE_SUCCESS);
   } catch (error) {
@@ -318,10 +317,10 @@ export const removeFromCart = async (req, res, next) => {
         path: "items.product",
         select: "name price discount_price images variation_status stock_quantity"
       })
-      .populate({
-        path: "items.variant",
-        select: "size price stock_quantity"
-      });
+  .populate({
+  path: "items.variant",
+  select: "size price stock_quantity sku color discount_price image images"
+});
 
     sendSuccess(res, populatedCart, CART_MESSAGES.REMOVE_SUCCESS);
   } catch (error) {
@@ -377,11 +376,10 @@ export const getCart = async (req, res, next) => {
         path: "items.product",
         select: "name price discount_price images variation_status stock_quantity"
       })
-      .populate({
-        path: "items.variant",
-        select: "size price stock_quantity"
-      });
-
+  .populate({
+  path: "items.variant",
+  select: "size price stock_quantity sku color discount_price image images"
+});
     if (!cart) {
       return sendSuccess(res, { products: [] }, CART_MESSAGES.EMPTY_CART);
     }
