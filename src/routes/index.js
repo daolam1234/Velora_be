@@ -6,7 +6,7 @@ import userRouter from "./userRouter.js";
 import wishlistRouter from "./wishlistRouter.js";
 import productVariantRouter from './productVariantRouter.js';
 import cartRouter from "./cartRouter.js";
-import couponRouter from "./coupon.route.js";
+import couponRouter from "./couponRoute.js";
 const routes = Router();
 
 routes.use("/products", productRouter)
