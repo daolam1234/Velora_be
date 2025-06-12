@@ -67,3 +67,15 @@ export const CART_MESSAGES = {
   ITEM_NOT_FOUND_TO_REMOVE: "Không tìm thấy sản phẩm để xóa.",
   EMPTY_CART: "Giỏ hàng đang trống.",
 };
+
+
+export const COUPON_MESSAGES = {
+  CREATE_SUCCESS: "Tạo mã giảm giá thành công",
+  UPDATE_SUCCESS: "Cập nhật mã giảm giá thành công",
+  CODE_EXISTS: "Mã coupon đã tồn tại",
+  NOT_FOUND: "Không tìm thấy coupon",
+  INVALID_DATE: "Ngày bắt đầu phải nhỏ hơn ngày kết thúc",
+  SERVER_ERROR: "Lỗi server",
+  GET_ALL_SUCCESS: "Lấy danh sách coupon thành công",
+  GET_BY_ID_SUCCESS: "Lấy chi tiết coupon thành công"
+};

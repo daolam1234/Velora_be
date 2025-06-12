@@ -6,6 +6,7 @@ import userRouter from "./userRouter.js";
 import wishlistRouter from "./wishlistRouter.js";
 import productVariantRouter from './productVariantRouter.js';
 import cartRouter from "./cartRouter.js";
+import couponRouter from "./coupon.route.js";
 const routes = Router();
 
 routes.use("/products", productRouter)
@@ -15,6 +16,7 @@ routes.use("/users", userRouter)
 routes.use("/wishlist", wishlistRouter);
 routes.use("/productvariants", productVariantRouter)
 routes.use("/cart", cartRouter);
+routes.use("/coupons", couponRouter);
 
 
 
