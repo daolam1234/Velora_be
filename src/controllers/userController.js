@@ -1,6 +1,8 @@
 import User from "../models/User.js";
 import { verifyToken, verifyAdmin } from "../middlewares/auth.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
+import { STATUS_CODES } from "../constant/statusCodes.js";
+import { AUTH_MESSAGES } from "../constant/messages.js";
 
 export const getUser = async (req, res) => {
     try {
@@ -145,6 +147,67 @@ export const updatePassword = async (req, res) => {
         });
     } catch (error) {
         return res.status(400).json({ message: "Lỗi server", error: error.message });
+    }
+};
+
+// Add new user (Admin only)
+export const addUser = async (req, res) => {
+    try {
+        // Verify token and admin role
+        await verifyToken(req, res, async () => {
+            await verifyAdmin(req, res, async () => {
+                const { username, password, email, full_name, phone, address } = req.body;
+
+                // Check if email already exists
+                const existingEmail = await User.findOne({ email });
+                if (existingEmail) {
+                    return res.status(STATUS_CODES.BAD_REQUEST).json({ 
+                        message: AUTH_MESSAGES.EMAIL_EXISTS 
+                    });
+                }
+
+                // Check if username already exists
+                const existingUsername = await User.findOne({ username });
+                if (existingUsername) {
+                    return res.status(STATUS_CODES.BAD_REQUEST).json({ 
+                        message: AUTH_MESSAGES.USERNAME_EXISTS 
+                    });
+                }
+
+                // Hash password
+                const hashedPassword = await bcrypt.hash(password, 10);
+
+                // Create new user
+                const newUser = new User({
+                    username,
+                    password: hashedPassword,
+                    email,
+                    full_name,
+                    phone,
+                    address,
+                });
+
+                await newUser.save();
+
+                return res.status(STATUS_CODES.CREATED).json({ 
+                    message: "Thêm người dùng mới thành công", 
+                    user: {
+                        _id: newUser._id,
+                        username: newUser.username,
+                        email: newUser.email,
+                        full_name: newUser.full_name,
+                        phone: newUser.phone,
+                        address: newUser.address,
+                        status: newUser.status
+                    }
+                });
+            });
+        });
+    } catch (error) {
+        return res.status(STATUS_CODES.SERVER_ERROR).json({ 
+            message: "Lỗi server", 
+            error: error.message 
+        });
     }
 };
 
