@@ -1,5 +1,5 @@
 import express from "express";
-import { createCoupon, deleteCoupon, getAllCoupons, getCouponById, updateCoupon, validateCouponForUser } from "../controllers/coupon.controller.js";
+import { createCoupon, deleteCoupon, getAllCoupons, getCouponById, updateCoupon, validateCouponForUser } from "../controllers/couponController.js";
 import { validateCouponDates } from "../middlewares/validateCouponDates.js";
 import { verifyToken } from "../middlewares/auth.js";
 const couponRouter = express.Router();
