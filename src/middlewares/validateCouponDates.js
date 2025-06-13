@@ -1,5 +1,5 @@
-import { COUPON_MESSAGES } from "../constant/messages";
-import { STATUS_CODES } from "../constant/statusCodes";
+import { COUPON_MESSAGES } from "../constant/messages.js";
+import { STATUS_CODES } from "../constant/statusCodes.js";
 
 export const validateCouponDates = (req, res, next) => {
   const { start_date, end_date } = req.body;

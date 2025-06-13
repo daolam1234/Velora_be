@@ -316,41 +316,41 @@ export const removeFromCart = async (req, res, next) => {
 };
 
 
-// // Xóa toàn bộ giỏ hàng
-// export const clearCart = async (req, res, next) => {
-//   try {
-//     const user_id = req.user._id;
+// Xóa toàn bộ giỏ hàng
+export const clearCart = async (req, res, next) => {
+  try {
+    const user_id = req.user._id;
 
-//     const cart = await Cart.findOne({ user: user_id });
-//     if (!cart || cart.items.length === 0) {
-//       return res.status(STATUS_CODES.NOT_FOUND).json({
-//         success: false,
-//         message: CART_MESSAGES.EMPTY_CART
-//       });
-//     }
+    const cart = await Cart.findOne({ user: user_id });
+    if (!cart || cart.items.length === 0) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: CART_MESSAGES.EMPTY_CART
+      });
+    }
 
-//     // Trả lại số lượng tồn kho cho từng sản phẩm/biến thể
-//     for (const item of cart.items) {
-//       if (item.variant) {
-//         await ProductVariant.findByIdAndUpdate(
-//           item.variant,
-//           { $inc: { stock_quantity: item.quantity } }
-//         );
-//       } else {
-//         await Product.findByIdAndUpdate(
-//           item.product,
-//           { $inc: { stock_quantity: item.quantity } }
-//         );
-//       }
-//     }
-//     cart.items = [];
-//     await cart.save();
+    // Trả lại số lượng tồn kho cho từng sản phẩm/biến thể
+    for (const item of cart.items) {
+      if (item.variant) {
+        await ProductVariant.findByIdAndUpdate(
+          item.variant,
+          { $inc: { stock_quantity: item.quantity } }
+        );
+      } else {
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock_quantity: item.quantity } }
+        );
+      }
+    }
+    cart.items = [];
+    await cart.save();
 
-//     sendSuccess(res, { products: [], totalPrice: 0 }, CART_MESSAGES.CLEAR_SUCCESS);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    sendSuccess(res, { products: [], totalPrice: 0 }, CART_MESSAGES.CLEAR_SUCCESS);
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 
