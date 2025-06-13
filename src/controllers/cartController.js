@@ -151,14 +151,13 @@ export const addToCart = async (req, res, next) => {
 };
 
 // Cập nhật số lượng sản phẩm trong giỏ
+// ✅ Cập nhật số lượng sản phẩm trong giỏ
 export const updateCartItem = async (req, res, next) => {
   try {
-    const product_id = req.body.product_id;
-    const quantity = parseInt(req.body.quantity);
-    const variant_id = req.body.variant_id;
+    const { product_id, variant_id, quantity } = req.body;
     const user_id = req.user._id;
 
-    // Validate quantity
+    // ✅ Validate quantity
     if (!quantity || quantity <= 0) {
       return res.status(STATUS_CODES.BAD_REQUEST).json({
         success: false,
@@ -166,8 +165,8 @@ export const updateCartItem = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra sản phẩm tồn tại và còn hàng
-    const product = await Product.findOne({ _id: product_id, isDeleted: false });
+    // ✅ Kiểm tra sản phẩm tồn tại
+    const product = await Product.findOne({ _id: product_id, isDeleted: false }).lean();
     if (!product) {
       return res.status(STATUS_CODES.NOT_FOUND).json({
         success: false,
@@ -175,35 +174,32 @@ export const updateCartItem = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra xem variant_id có hợp lệ không nếu được cung cấp
-    if (variant_id && !product.variants.some(v => v._id.toString() === variant_id)) {
-        return res.status(STATUS_CODES.BAD_REQUEST).json({
-            success: false,
-            message: CART_MESSAGES.INVALID_VARIANT
-        });
-    }
-
-    // Kiểm tra stock dựa trên biến thể nếu có
+    // ✅ Kiểm tra biến thể nếu có
     let availableStock = product.stock_quantity;
     if (variant_id) {
-        const selectedVariant = product.variants.find(v => v._id.toString() === variant_id);
-         if (!selectedVariant) {
-             return res.status(STATUS_CODES.BAD_REQUEST).json({
-                success: false,
-                message: CART_MESSAGES.VARIANT_NOT_FOUND
-            });
-        }
-        availableStock = selectedVariant.stock_quantity;
+      const selectedVariant = product.variants?.find(
+        (v) => v._id.toString() === variant_id
+      );
+
+      if (!selectedVariant) {
+        return res.status(STATUS_CODES.BAD_REQUEST).json({
+          success: false,
+          message: CART_MESSAGES.VARIANT_NOT_FOUND
+        });
+      }
+
+      availableStock = selectedVariant.stock_quantity;
     }
 
+    // ✅ Kiểm tra số lượng còn đủ không
     if (availableStock < quantity) {
       return res.status(STATUS_CODES.BAD_REQUEST).json({
         success: false,
-        message: variant_id ? CART_MESSAGES.INSUFFICIENT_VARIANT_STOCK : CART_MESSAGES.INSUFFICIENT_STOCK
+        message: CART_MESSAGES.INSUFFICIENT_STOCK
       });
     }
 
-    // Tìm giỏ hàng
+    // ✅ Tìm giỏ hàng
     const cart = await Cart.findOne({ user: user_id });
     if (!cart) {
       return res.status(STATUS_CODES.NOT_FOUND).json({
@@ -212,10 +208,11 @@ export const updateCartItem = async (req, res, next) => {
       });
     }
 
-    // Tìm và cập nhật sản phẩm
+    // ✅ Tìm sản phẩm trong giỏ
     const productIndex = cart.items.findIndex(
-      item => item.product.toString() === product_id &&
-              (variant_id ? item.variant?.toString() === variant_id : !item.variant)
+      (item) =>
+        item.product.toString() === product_id &&
+        ((variant_id && item.variant?.toString() === variant_id) || (!variant_id && !item.variant))
     );
 
     if (productIndex === -1) {
@@ -225,18 +222,20 @@ export const updateCartItem = async (req, res, next) => {
       });
     }
 
+    // ✅ Cập nhật quantity
     cart.items[productIndex].quantity = quantity;
     await cart.save();
 
+    // ✅ Populate để trả về dữ liệu đầy đủ
     const populatedCart = await Cart.findById(cart._id)
       .populate({
         path: "items.product",
         select: "name price discount_price images variation_status stock_quantity"
       })
-       .populate({
-  path: "items.variant",
-  select: "size price stock_quantity sku color discount_price image images"
-});
+      .populate({
+        path: "items.variant",
+        select: "size price stock_quantity sku color discount_price image images"
+      });
 
     sendSuccess(res, populatedCart, CART_MESSAGES.UPDATE_SUCCESS);
   } catch (error) {
@@ -245,7 +244,8 @@ export const updateCartItem = async (req, res, next) => {
 };
 
 
-// Xóa 1 sản phẩm (hoặc sản phẩm + biến thể) khỏi giỏ hàng
+
+// ✅ Xóa 1 sản phẩm (hoặc sản phẩm + biến thể) khỏi giỏ hàng
 export const removeFromCart = async (req, res, next) => {
   try {
     const { product_id, variant_id } = req.body;
@@ -266,6 +266,7 @@ export const removeFromCart = async (req, res, next) => {
       });
     }
 
+    // ✅ Tìm item khớp product và variant (nếu có)
     const itemIndex = cart.items.findIndex(
       item =>
         item.product.toString() === product_id &&
@@ -279,54 +280,41 @@ export const removeFromCart = async (req, res, next) => {
       });
     }
 
-    if (cart.items[itemIndex].quantity > 1) {
-      cart.items[itemIndex].quantity -= 1;
-      // Trả lại 1 số lượng vào tồn kho
-      if (variant_id) {
-        await ProductVariant.findByIdAndUpdate(
-          variant_id,
-          { $inc: { stock_quantity: 1 } }
-        );
-      } else {
-        await Product.findByIdAndUpdate(
-          product_id,
-          { $inc: { stock_quantity: 1 } }
-        );
-      }
+    // ✅ Trả lại toàn bộ số lượng về kho
+    const qtyToReturn = cart.items[itemIndex].quantity;
+    if (variant_id) {
+      await ProductVariant.findByIdAndUpdate(
+        variant_id,
+        { $inc: { stock_quantity: qtyToReturn } }
+      );
     } else {
-      // Trả lại toàn bộ số lượng vào tồn kho trước khi xóa
-      const qtyToReturn = cart.items[itemIndex].quantity;
-      if (variant_id) {
-        await ProductVariant.findByIdAndUpdate(
-          variant_id,
-          { $inc: { stock_quantity: qtyToReturn } }
-        );
-      } else {
-        await Product.findByIdAndUpdate(
-          product_id,
-          { $inc: { stock_quantity: qtyToReturn } }
-        );
-      }
-      cart.items.splice(itemIndex, 1); // xóa khỏi mảng
+      await Product.findByIdAndUpdate(
+        product_id,
+        { $inc: { stock_quantity: qtyToReturn } }
+      );
     }
 
+    // ✅ Xóa item khỏi giỏ
+    cart.items.splice(itemIndex, 1);
     await cart.save();
 
+    // ✅ Populate lại giỏ hàng
     const populatedCart = await Cart.findById(cart._id)
       .populate({
         path: "items.product",
         select: "name price discount_price images variation_status stock_quantity"
       })
-  .populate({
-  path: "items.variant",
-  select: "size price stock_quantity sku color discount_price image images"
-});
+      .populate({
+        path: "items.variant",
+        select: "size price stock_quantity sku color discount_price image images"
+      });
 
     sendSuccess(res, populatedCart, CART_MESSAGES.REMOVE_SUCCESS);
   } catch (error) {
     next(error);
   }
 };
+
 
 // Xóa toàn bộ giỏ hàng
 export const clearCart = async (req, res, next) => {

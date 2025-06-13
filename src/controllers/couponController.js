@@ -1,8 +1,8 @@
 
 
-import { COUPON_MESSAGES } from "../constant/messages";
-import { STATUS_CODES } from "../constant/statusCodes";
-import Coupon from "../models/Coupon";
+import { COUPON_MESSAGES } from "../constant/messages.js";
+import { STATUS_CODES } from "../constant/statusCodes.js";
+import Coupon from "../models/Coupon.js";
 
 // Tạo coupon 
 export const createCoupon = async (req, res) => {
