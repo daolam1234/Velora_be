@@ -177,9 +177,7 @@ export const updateCartItem = async (req, res, next) => {
     // ✅ Kiểm tra biến thể nếu có
     let availableStock = product.stock_quantity;
     if (variant_id) {
-      const selectedVariant = product.variants?.find(
-        (v) => v._id.toString() === variant_id
-      );
+      const selectedVariant = await ProductVariant.findById(variant_id);
 
       if (!selectedVariant) {
         return res.status(STATUS_CODES.BAD_REQUEST).json({
