@@ -74,14 +74,14 @@ export const addToCart = async (req, res, next) => {
       });
     }
 
-    // Trừ số lượng tồn kho
-    if (variant_id) {
-      selectedVariant.stock_quantity -= quantity;
-      await selectedVariant.save();
-    } else {
-      product.stock_quantity -= quantity;
-      await product.save();
-    }
+    // // Trừ số lượng tồn kho
+    // if (variant_id) {
+    //   selectedVariant.stock_quantity -= quantity;
+    //   await selectedVariant.save();
+    // } else {
+    //   product.stock_quantity -= quantity;
+    //   await product.save();
+    // }
 
     // Tìm hoặc tạo giỏ hàng
     let cart = await Cart.findOne({ user: user_id });
@@ -94,6 +94,17 @@ export const addToCart = async (req, res, next) => {
       item => item.product.toString() === product_id &&
               (variant_id ? item.variant?.toString() === variant_id : !item.variant)
     );
+
+    // 👉 Tổng số lượng đã có + muốn thêm
+const totalRequestedQuantity = (existingItem?.quantity || 0) + quantity;
+
+if (availableStock < totalRequestedQuantity) {
+  return res.status(STATUS_CODES.BAD_REQUEST).json({
+    success: false,
+    code: 'EXCEED_STOCK_LIMIT',
+    message: 'Sản phẩm trong giỏ hàng đã đạt số lượng tồn kho tối đa.',
+  });
+}
 
     if (existingItem) {
       existingItem.quantity += quantity;
@@ -177,7 +188,13 @@ export const updateCartItem = async (req, res, next) => {
     // ✅ Kiểm tra biến thể nếu có
     let availableStock = product.stock_quantity;
     if (variant_id) {
-      const selectedVariant = await ProductVariant.findById(variant_id);
+
+      const selectedVariant = await ProductVariant.findOne({
+  _id: variant_id,
+  product_id: product_id,
+  isDeleted: false
+});
+
 
       if (!selectedVariant) {
         return res.status(STATUS_CODES.BAD_REQUEST).json({
@@ -278,19 +295,19 @@ export const removeFromCart = async (req, res, next) => {
       });
     }
 
-    // ✅ Trả lại toàn bộ số lượng về kho
-    const qtyToReturn = cart.items[itemIndex].quantity;
-    if (variant_id) {
-      await ProductVariant.findByIdAndUpdate(
-        variant_id,
-        { $inc: { stock_quantity: qtyToReturn } }
-      );
-    } else {
-      await Product.findByIdAndUpdate(
-        product_id,
-        { $inc: { stock_quantity: qtyToReturn } }
-      );
-    }
+    // // ✅ Trả lại toàn bộ số lượng về kho
+    // const qtyToReturn = cart.items[itemIndex].quantity;
+    // if (variant_id) {
+    //   await ProductVariant.findByIdAndUpdate(
+    //     variant_id,
+    //     { $inc: { stock_quantity: qtyToReturn } }
+    //   );
+    // } else {
+    //   await Product.findByIdAndUpdate(
+    //     product_id,
+    //     { $inc: { stock_quantity: qtyToReturn } }
+    //   );
+    // }
 
     // ✅ Xóa item khỏi giỏ
     cart.items.splice(itemIndex, 1);
