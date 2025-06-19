@@ -94,4 +94,7 @@ export const ORDER_MESSAGES = {
   GET_BY_ID_SUCCESS: "Lấy đơn hàng thành công",
   FORBIDDEN: "Bạn không có quyền xem đơn hàng này",
   ORDER_NOT_FOUND: "Đơn hàng không tồn tại",
+  INVALID_STATUS: "Trạng thái đơn hàng không hợp lệ",
+  STATUS_UPDATED: "Cập nhật trạng thái đơn hàng thành công",
+  STATUS_UPDATED_FAIL:"Không thể chuyển trạng thái"
 };

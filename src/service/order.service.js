@@ -227,3 +227,47 @@ export const getOrderByIdService = async (orderId, user) => {
     data: order,
   };
 };
+
+//update order
+
+const allowedTransitions = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['shipped', 'cancelled'],
+  shipped: ['completed'],
+  completed: [],
+  cancelled: [],
+};
+
+export const updateOrderStatusService = async (orderId, newStatus) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return {
+      statusCode: STATUS_CODES.NOT_FOUND,
+      success: false,
+      message: "Đơn hàng không tồn tại",
+    };
+  }
+
+  const currentStatus = order.status;
+  const allowed = allowedTransitions[currentStatus] || [];
+
+  if (!allowed.includes(newStatus)) {
+    return {
+      statusCode: STATUS_CODES.BAD_REQUEST,
+      success: false,
+      message: ORDER_MESSAGES.STATUS_UPDATED_FAIL,
+    };
+  }
+
+  order.status = newStatus;
+  await order.save();
+
+  return {
+    statusCode: STATUS_CODES.OK,
+    success: true,
+    message: ORDER_MESSAGES.STATUS_UPDATED,
+    data: order,
+  };
+};
+

@@ -1,7 +1,7 @@
 import express from "express";
 
 
-import { createOrder, getOrderById, getOrders, getOrdersByUser } from "../controllers/orderController.js";
+import { createOrder, getOrderById, getOrders, getOrdersByUser, updateOrder } from "../controllers/orderController.js";
 import { verifyAdmin, verifyToken } from "../middlewares/auth.js";
 
 const OrderRouter = express.Router();
@@ -16,5 +16,8 @@ OrderRouter.get("/", verifyToken, getOrdersByUser);
 OrderRouter.get("/all", verifyToken, verifyAdmin, getOrders);
 
 OrderRouter.get("/:id", verifyToken, getOrderById);
+
+OrderRouter.put("/:orderId/status", verifyToken, verifyAdmin, updateOrder);
+
 
 export default OrderRouter; 
