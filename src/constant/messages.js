@@ -79,3 +79,16 @@ export const COUPON_MESSAGES = {
   GET_ALL_SUCCESS: "Lấy danh sách coupon thành công",
   GET_BY_ID_SUCCESS: "Lấy chi tiết coupon thành công"
 };
+
+export const ORDER_MESSAGES = {
+  CREATE_SUCCESS: "Đặt hàng thành công",
+  GET_LIST_SUCCESS: "Lấy danh sách đơn hàng thành công",
+  GET_BY_ID_SUCCESS: "Lấy thông tin đơn hàng thành công",
+  NOT_FOUND: "Không tìm thấy đơn hàng",
+  INVALID_DATA: "Dữ liệu đơn hàng không hợp lệ",
+  PRODUCT_NOT_FOUND: "Không tìm thấy sản phẩm",
+  VARIANT_NOT_FOUND: "Không tìm thấy biến thể sản phẩm",
+  INSUFFICIENT_STOCK: "Số lượng sản phẩm trong kho không đủ",
+  COUPON_NOT_FOUND: "Mã giảm giá không tồn tại hoặc đã hết hạn",
+  SERVER_ERROR: "Lỗi server"
+};
