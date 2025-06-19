@@ -178,3 +178,12 @@ export const createOrderService = async (req) => {
     session.endSession();
   }
 };
+
+export const getOrdersService = async (userId) => {
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+  return {
+    status: true,
+    data: orders,
+    message: "Lấy danh sách đơn hàng thành công",
+  };
+}
