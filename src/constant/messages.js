@@ -90,5 +90,8 @@ export const ORDER_MESSAGES = {
   VARIANT_NOT_FOUND: "Không tìm thấy biến thể sản phẩm",
   INSUFFICIENT_STOCK: "Số lượng sản phẩm trong kho không đủ",
   COUPON_NOT_FOUND: "Mã giảm giá không tồn tại hoặc đã hết hạn",
-  SERVER_ERROR: "Lỗi server"
+  SERVER_ERROR: "Lỗi server",
+  GET_BY_ID_SUCCESS: "Lấy đơn hàng thành công",
+  FORBIDDEN: "Bạn không có quyền xem đơn hàng này",
+  ORDER_NOT_FOUND: "Đơn hàng không tồn tại",
 };
