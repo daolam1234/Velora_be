@@ -1,5 +1,5 @@
 import Order from "../models/Order.js";
-import { createOrderService, getOrderByIdService, getOrdersByUserService, getOrdersService, updateOrderStatusService } from "../service/order.service.js";
+import { cancelOrderService, createOrderService, getOrderByIdService, getOrdersByUserService, getOrdersService, updateOrderStatusService } from "../service/order.service.js";
 import { createdHandler } from "../utils/createdHandler.js";
 
 export const createOrder = async (req, res) => {
@@ -62,6 +62,22 @@ export const updateOrder = async (req, res) => {
   } catch (error) {
     console.error("Error updating order status:", error);
     res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+
+
+export const cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user._id;
+
+    const result = await cancelOrderService(orderId, userId);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error cancelling order:", error);
+    return res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
 

@@ -271,3 +271,56 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
   };
 };
 
+
+
+
+export const cancelOrderService = async (orderId, userId) => {
+
+  //ID đơn hàng không hợp lệ
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return {
+      statusCode: 400,
+      success: false,
+      message:ORDER_MESSAGES.ID_FAIL,
+    };
+  }
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return {
+      statusCode: 404,
+      success: false,
+      message: ORDER_MESSAGES.ORDER_NOT_FOUND,
+    };
+  }
+
+  // Chỉ huỷ được nếu đơn thuộc về user hiện tại
+  if (order.user.toString() !== userId.toString()) {
+    return {
+      statusCode: 403,
+      success: false,
+      message: ORDER_MESSAGES.FORBIDDEN_CANCEL,
+    };
+  }
+
+  // Nếu đơn đã được xác nhận hoặc xử lý thì không huỷ được
+  if (["confirmed", "shipped", "completed", "cancelled"].includes(order.status)) {
+    return {
+      statusCode: 400,
+      success: false,
+      message: ORDER_MESSAGES.CONFIRMED,
+    };
+  }
+
+  order.status = "cancelled";
+  await order.save();
+
+  return {
+    statusCode: 200,
+    success: true,
+    message: ORDER_MESSAGES.CANCEL_SUCCESS,
+    data: order,
+  };
+};
+
