@@ -1,6 +1,5 @@
-import { createOrderService } from "../service/order.service.js";
+import { createOrderService, getOrdersByUserService, getOrdersService } from "../service/order.service.js";
 import { createdHandler } from "../utils/createdHandler.js";
-import { getOrdersService } from "../service/order.service.js";
 
 export const createOrder = async (req, res) => {
   const result = await createOrderService(req);
@@ -19,11 +18,23 @@ export const createOrder = async (req, res) => {
 
 export const getOrdersByUser = async (req, res) => {
   try {
-    const result = await getOrdersService(req.user._id);
+    const result = await getOrdersByUserService(req.user._id);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error getting orders:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getOrders = async (req, res) => {
+  try {
+    const result = await getOrdersService();
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error getting orders:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 

@@ -1,19 +1,19 @@
 import express from "express";
 
 
-import { createOrder, getOrdersByUser } from "../controllers/orderController.js";
-import { verifyToken } from "../middlewares/auth.js";
+import { createOrder, getOrders, getOrdersByUser } from "../controllers/orderController.js";
+import { verifyAdmin, verifyToken } from "../middlewares/auth.js";
 
 const OrderRouter = express.Router();
 
-// Create new order
+// Tao đơn hàng mới
 OrderRouter.post("/", verifyToken, createOrder);
 
-// Get all orders for a user
+// Lấy danh sách đơn hàng của người dùng
 OrderRouter.get("/", verifyToken, getOrdersByUser);
 
-// // Quản lý đơn hàng - Admin routes
-// OrderRouter.get("/all", checkPermission.verifyToken, checkPermission.isAdmin, getOrdersAdmin);
+// Quản lý đơn hàng - Admin routes
+OrderRouter.get("/all", verifyToken, verifyAdmin, getOrders);
 
 // OrderRouter.get("/:id", checkPermission.verifyToken, getOrderById);
 

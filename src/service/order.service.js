@@ -179,11 +179,20 @@ export const createOrderService = async (req) => {
   }
 };
 
-export const getOrdersService = async (userId) => {
+export const getOrdersByUserService = async (userId) => {
   const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
   return {
+    message: "Lấy danh sách đơn hàng thành công",
     status: true,
     data: orders,
-    message: "Lấy danh sách đơn hàng thành công",
   };
-}
+};
+
+export const getOrdersService = async () => {
+  const orders = await Order.find().sort({ createdAt: -1 });
+  return {
+    message: "Lấy danh sách đơn hàng thành công",
+    status: true,
+    data: orders,
+  };
+};
