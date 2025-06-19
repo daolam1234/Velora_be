@@ -90,5 +90,15 @@ export const ORDER_MESSAGES = {
   VARIANT_NOT_FOUND: "Không tìm thấy biến thể sản phẩm",
   INSUFFICIENT_STOCK: "Số lượng sản phẩm trong kho không đủ",
   COUPON_NOT_FOUND: "Mã giảm giá không tồn tại hoặc đã hết hạn",
-  SERVER_ERROR: "Lỗi server"
+  SERVER_ERROR: "Lỗi server",
+  GET_BY_ID_SUCCESS: "Lấy đơn hàng thành công",
+  FORBIDDEN: "Bạn không có quyền xem đơn hàng này",
+  ORDER_NOT_FOUND: "Đơn hàng không tồn tại",
+  INVALID_STATUS: "Trạng thái đơn hàng không hợp lệ",
+  STATUS_UPDATED: "Cập nhật trạng thái đơn hàng thành công",
+  STATUS_UPDATED_FAIL:"Không thể chuyển trạng thái",
+  ID_FAIL: "ID đơn hàng không hợp lệ",
+  FORBIDDEN_CANCEL:"Bạn không có quyền huỷ đơn hàng này",
+  CONFIRMED:"Đơn hàng đã được xử lý, không thể huỷ",
+  CANCEL_SUCCESS:"Huỷ đơn hàng thành công"
 };

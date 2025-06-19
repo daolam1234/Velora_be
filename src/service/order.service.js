@@ -5,6 +5,7 @@ import Coupon from "../models/Coupon.js";
 import Cart from "../models/Cart.js";
 import Order from "../models/Order.js";
 import { ORDER_MESSAGES } from "../constant/messages.js";
+import { STATUS_CODES } from "../constant/statusCodes.js";
 
 export const createOrderService = async (req) => {
   const session = await mongoose.startSession();
@@ -32,7 +33,7 @@ export const createOrderService = async (req) => {
         await session.abortTransaction();
         aborted = true;
         return {
-          statusCode: 404,
+          statusCode: STATUS_CODES.BAD_REQUEST,
           success: false,
           message: ORDER_MESSAGES.PRODUCT_NOT_FOUND,
         };
@@ -47,7 +48,7 @@ export const createOrderService = async (req) => {
           await session.abortTransaction();
           aborted = true;
           return {
-            statusCode: 400,
+            statusCode: STATUS_CODES.BAD_REQUEST,
             success: false,
             message: ORDER_MESSAGES.VARIANT_NOT_FOUND,
           };
@@ -57,7 +58,7 @@ export const createOrderService = async (req) => {
           await session.abortTransaction();
           aborted = true;
           return {
-            statusCode: 400,
+            statusCode: STATUS_CODES.BAD_REQUEST,
             success: false,
             message: ORDER_MESSAGES.INSUFFICIENT_STOCK,
           };
@@ -69,7 +70,7 @@ export const createOrderService = async (req) => {
         await session.abortTransaction();
         aborted = true;
         return {
-          statusCode: 400,
+          statusCode: STATUS_CODES.BAD_REQUEST,
           success: false,
           message: ORDER_MESSAGES.VARIANT_NOT_FOUND,
         };
@@ -107,7 +108,7 @@ export const createOrderService = async (req) => {
         await session.abortTransaction();
         aborted = true;
         return {
-          statusCode: 400,
+          statusCode: STATUS_CODES.BAD_REQUEST,
           success: false,
           message: ORDER_MESSAGES.COUPON_NOT_FOUND,
         };
@@ -159,7 +160,7 @@ export const createOrderService = async (req) => {
 
     await session.commitTransaction();
     return {
-      statusCode: 201,
+      statusCode: STATUS_CODES.CREATED,
       success: true,
       message: ORDER_MESSAGES.CREATE_SUCCESS,
       data: order,
@@ -170,7 +171,7 @@ export const createOrderService = async (req) => {
     }
     console.error("Error creating order:", error);
     return {
-      statusCode: 500,
+      statusCode: STATUS_CODES.SERVER_ERROR,
       success: false,
       message: ORDER_MESSAGES.SERVER_ERROR,
     };
@@ -178,3 +179,148 @@ export const createOrderService = async (req) => {
     session.endSession();
   }
 };
+
+export const getOrdersByUserService = async (userId) => {
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+  return {
+    message: ORDER_MESSAGES.GET_ORDERS_SUCCESS,
+    status: true,
+    data: orders,
+  };
+};
+
+export const getOrdersService = async () => {
+  const orders = await Order.find().sort({ createdAt: -1 });
+  return {
+    message: ORDER_MESSAGES.GET_ORDERS_SUCCESS,
+    status: true,
+    data: orders,
+  };
+};
+
+
+//tìm theo id đơn hàng
+export const getOrderByIdService = async (orderId, user) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return {
+      statusCode: STATUS_CODES.NOT_FOUND,
+      success: false,
+      message: ORDER_MESSAGES.ORDER_NOT_FOUND,
+    };
+  }
+
+  // Nếu không phải admin thì chỉ được xem đơn hàng của chính mình
+  if (user.role !== "admin" && order.user.toString() !== user._id.toString()) {
+    return {
+      statusCode: STATUS_CODES.FORBIDDEN,
+      success: false,
+      message: ORDER_MESSAGES.FORBIDDEN,
+    };
+  }
+
+  return {
+    statusCode: STATUS_CODES.OK,
+    success: true,
+    message: ORDER_MESSAGES.GET_BY_ID_SUCCESS,
+    data: order,
+  };
+};
+
+//update order
+
+const allowedTransitions = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['shipped', 'cancelled'],
+  shipped: ['completed'],
+  completed: [],
+  cancelled: [],
+};
+
+export const updateOrderStatusService = async (orderId, newStatus) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return {
+      statusCode: STATUS_CODES.NOT_FOUND,
+      success: false,
+      message: "Đơn hàng không tồn tại",
+    };
+  }
+
+  const currentStatus = order.status;
+  const allowed = allowedTransitions[currentStatus] || [];
+
+  if (!allowed.includes(newStatus)) {
+    return {
+      statusCode: STATUS_CODES.BAD_REQUEST,
+      success: false,
+      message: ORDER_MESSAGES.STATUS_UPDATED_FAIL,
+    };
+  }
+
+  order.status = newStatus;
+  await order.save();
+
+  return {
+    statusCode: STATUS_CODES.OK,
+    success: true,
+    message: ORDER_MESSAGES.STATUS_UPDATED,
+    data: order,
+  };
+};
+
+
+
+
+export const cancelOrderService = async (orderId, userId) => {
+
+  //ID đơn hàng không hợp lệ
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return {
+      statusCode: 400,
+      success: false,
+      message:ORDER_MESSAGES.ID_FAIL,
+    };
+  }
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return {
+      statusCode: 404,
+      success: false,
+      message: ORDER_MESSAGES.ORDER_NOT_FOUND,
+    };
+  }
+
+  // Chỉ huỷ được nếu đơn thuộc về user hiện tại
+  if (order.user.toString() !== userId.toString()) {
+    return {
+      statusCode: 403,
+      success: false,
+      message: ORDER_MESSAGES.FORBIDDEN_CANCEL,
+    };
+  }
+
+  // Nếu đơn đã được xác nhận hoặc xử lý thì không huỷ được
+  if (["confirmed", "shipped", "completed", "cancelled"].includes(order.status)) {
+    return {
+      statusCode: 400,
+      success: false,
+      message: ORDER_MESSAGES.CONFIRMED,
+    };
+  }
+
+  order.status = "cancelled";
+  await order.save();
+
+  return {
+    statusCode: 200,
+    success: true,
+    message: ORDER_MESSAGES.CANCEL_SUCCESS,
+    data: order,
+  };
+};
+
