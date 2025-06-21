@@ -459,6 +459,7 @@ export const getCart = async (req, res, next) => {
       {
         products: cartWithVariantDetails,
         totalPrice,
+        user: cart.user._id,
       },
       CART_MESSAGES.GET_SUCCESS
     );
