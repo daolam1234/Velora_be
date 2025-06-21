@@ -1,10 +1,11 @@
 import express from 'express';
-import { createBlog, deleteBlogBySlug, forceDeleteBlogBySlug, getBlogBySlug, getBlogs, getDeletedBlogs, restoreBlogBySlug, updateBlogBySlug } from '../controllers/blogController.js';
+import { createBlog, deleteBlogBySlug, forceDeleteBlogBySlug, getBlogBySlug, getBlogs, getBlogsByCategory, getDeletedBlogs, restoreBlogBySlug, updateBlogBySlug } from '../controllers/blogController.js';
 
 const blogPostRouter = express.Router();
 
 blogPostRouter.get('/', getBlogs);
 blogPostRouter.get('/trash', getDeletedBlogs);
+blogPostRouter.get('/by-category/:categoryId', getBlogsByCategory); 
 blogPostRouter.get('/:slug', getBlogBySlug);
 blogPostRouter.post('/', createBlog);
 blogPostRouter.put('/:slug', updateBlogBySlug);

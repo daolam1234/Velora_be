@@ -44,27 +44,35 @@ export const updateUserStatus = async (req, res) => {
 }
 
 export const getDetailUser = async (req, res) => {
-    try {
-        // Verify token and admin role
-        await verifyToken(req, res, async () => {
-            await verifyAdmin(req, res, async () => {
-                const {id} = req.params;
-                const user = await User.findById(id).select('-password');
-                
-                if (!user) {
-                    return res.status(404).json({message: "Không tìm thấy người dùng"});
-                }
-                
-                return res.status(200).json({
-                    message: "Lấy thông tin người dùng thành công",
-                    user
-                });
-            });
-        });
-    } catch (error) {
-        return res.status(400).json({message: "Lỗi server", error: error.message});
-    }
-}
+  try {
+    await verifyToken(req, res, async () => {
+      const { id } = req.params;
+
+      // Chỉ cho phép người dùng lấy thông tin chính họ
+      if (req.user._id.toString() !== id) {
+        return res
+          .status(403)
+          .json({ message: "Không có quyền truy cập thông tin người khác" });
+      }
+
+      const user = await User.findById(id).select("-password");
+
+      if (!user) {
+        return res.status(404).json({ message: "Không tìm thấy người dùng" });
+      }
+
+      return res.status(200).json({
+        message: "Lấy thông tin người dùng thành công",
+        user,
+      });
+    });
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ message: "Lỗi server", error: error.message });
+  }
+};
+
 // cập nhật thông tin user
 export const updateUser = async (req, res) => {
     try {

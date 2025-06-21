@@ -60,16 +60,15 @@ export const getProducts = async (req, res) => {
       if (size) {
         variantMatch["variants.size"] = size;
       }
-
-      if (color) {
-        variantMatch["variants.color"] = color;
+if (color) {
+        variantMatch["variants.color"] = { $regex: color, $options: "i" };
       }
 
-      if (minPrice || maxPrice) {
-        variantMatch["variants.price"] = {};
-        if (minPrice) variantMatch["variants.price"].$gte = parseFloat(minPrice);
-        if (maxPrice) variantMatch["variants.price"].$lte = parseFloat(maxPrice);
-      }
+    if (minPrice || maxPrice) {
+  variantMatch["variants.discount_price"] = {};
+  if (minPrice) variantMatch["variants.discount_price"].$gte = parseFloat(minPrice);
+  if (maxPrice) variantMatch["variants.discount_price"].$lte = parseFloat(maxPrice);
+}
 
       pipeline.push({
         $match: variantMatch,

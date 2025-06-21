@@ -49,6 +49,43 @@ export const getBlogBySlug = async (req, res) => {
   }
 };
 
+export const getBlogsByCategory = async (req, res) => {
+  const { categoryId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+    return res.status(STATUS_CODES.BAD_REQUEST).json({
+      success: false,
+      message: 'categoryId không hợp lệ',
+    });
+  }
+
+  try {
+    const categoryObjectId = new mongoose.Types.ObjectId(categoryId);
+
+    const blogs = await BlogPost.find({
+      category: categoryObjectId,
+      isDeleted: false,
+    }).populate('category');
+
+    return res.status(STATUS_CODES.OK).json({
+      success: true,
+      message:
+        blogs.length === 0
+          ? 'Không có bài viết nào trong danh mục này'
+          : 'Lấy blog theo danh mục thành công',
+      data: blogs,
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy blog theo danh mục:', error);
+    return res.status(STATUS_CODES.SERVER_ERROR).json({
+      success: false,
+      message: 'Lỗi server',
+      error: error.message,
+    });
+  }
+};
+
+
 export const getDeletedBlogs = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
