@@ -24,16 +24,13 @@ const orderSchema = new mongoose.Schema({
     coupon: {
         couponId: { type: mongoose.Schema.Types.ObjectId, ref: "Coupon" },
         code: { type: String },
-        discountAmount: { type: Number }
+        discountAmount: { type: Number } // số tiền giảm của mã giảm giá khi nhập 
     },
 
     shippingAddress: {
         name: { type: String },
         phone: { type: String },
         addressLine: { type: String },
-        ward: { type: String },
-        district: { type: String },
-        province: { type: String }
     },
     
     note:{ type: String},
