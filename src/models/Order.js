@@ -35,6 +35,9 @@ const orderSchema = new mongoose.Schema({
         district: { type: String },
         province: { type: String }
     },
+    
+    note:{ type: String},
+
 
     paymentMethod: {
         type: String,

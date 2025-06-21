@@ -139,6 +139,7 @@ export const createOrderService = async (req) => {
           }
         : undefined,
       shippingAddress,
+      note,
       paymentMethod: payment_method,
       status: "pending",
     });
