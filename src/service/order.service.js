@@ -123,7 +123,7 @@ export const createOrderService = async (req) => {
       if (isNaN(discount)) discount = 0;
     }
 
-    const shipping_fee = shippingMethod?.fee || 0;
+    const shipping_fee = req.body.shippingFee || 0;
     const final_price = subtotal + shipping_fee - discount;
 
     const order = new Order({

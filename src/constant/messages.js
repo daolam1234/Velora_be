@@ -77,7 +77,10 @@ export const COUPON_MESSAGES = {
   INVALID_DATE: "Ngày bắt đầu phải nhỏ hơn ngày kết thúc",
   SERVER_ERROR: "Lỗi server",
   GET_ALL_SUCCESS: "Lấy danh sách coupon thành công",
-  GET_BY_ID_SUCCESS: "Lấy chi tiết coupon thành công"
+  GET_BY_ID_SUCCESS: "Lấy chi tiết coupon thành công",
+  INACTIVE: "Mã giảm giá chưa được kích hoạt.",
+  NOT_STARTED: "Mã giảm giá chưa bắt đầu.",
+  EXPIRED: "Mã giảm giá đã hết hạn.",
 };
 
 export const ORDER_MESSAGES = {

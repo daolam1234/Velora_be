@@ -120,17 +120,28 @@ export const validateCouponForUser = async (req, res) => {
     const now = new Date();                // Lấy thời gian hiện tại
 
     // Tìm coupon còn hiệu lực
-    const coupon = await Coupon.findOne({
-      code,                                // Mã giống mã người dùng nhập
-      is_active: true,                     // Coupon đang hoạt động
-      start_date: { $lte: now },           // Bắt đầu trước hoặc bằng hiện tại
-      end_date: { $gte: now }              // Kết thúc sau hoặc bằng hiện tại
-    });
+    const coupon = await Coupon.findOne({ code });
 
     if (!coupon) {
       return res.status(404).json({ message: "Coupon không hợp lệ hoặc đã hết hạn" });
     }
 
+    if (!coupon.is_active) {
+      return res
+        .status(400)
+        .json({ valid: false, message: COUPON_MESSAGES.INACTIVE });
+    }
+    if (new Date(coupon.start_date) > now) {
+      return res
+        .status(400)
+        .json({ valid: false, message: COUPON_MESSAGES.NOT_STARTED });
+    }
+
+    if (new Date(coupon.end_date) < now) {
+      return res
+        .status(400)
+        .json({ valid: false, message: COUPON_MESSAGES.EXPIRED });
+    }
     // Nếu hợp lệ, trả về thông tin coupon
     res.json({ valid: true, data: coupon });
 
