@@ -326,8 +326,18 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
+  // Cập nhật trạng thái
   order.status = "cancelled";
   await order.save();
+
+  // Trả lại hàng
+  for (const item of order.items) {
+    const variant = await ProductVariant.findById(item.variantId);
+    if (variant) {
+      variant.stock_quantity += item.quantity;
+      await variant.save();
+    }
+  }
 
   return {
     statusCode: 200,
