@@ -7,7 +7,7 @@ import Coupon from "../models/Coupon.js";
 // Tạo coupon 
 export const createCoupon = async (req, res) => {
   try {
-    const { code, discount_type, discount_value, min_purchase, start_date, end_date } = req.body;
+    const { code, discount_type, discount_value, min_purchase,max_discount, start_date, end_date } = req.body;
     const exists = await Coupon.findOne({ code });
     if (exists) {
       return res.status(STATUS_CODES.BAD_REQUEST).json({ status: false, message: COUPON_MESSAGES.CODE_EXISTS });
@@ -19,6 +19,8 @@ export const createCoupon = async (req, res) => {
       min_purchase,
       start_date,
       end_date,
+       // Chỉ thêm max_discount nếu là percent
+      max_discount: discount_type === 'percent' ? max_discount || 0 : 0,
     });
     res.status(STATUS_CODES.CREATED).json({ status: true, message: COUPON_MESSAGES.CREATE_SUCCESS, data: coupon });
   } catch (error) {

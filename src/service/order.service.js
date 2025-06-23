@@ -114,13 +114,28 @@ export const createOrderService = async (req) => {
         };
       }
 
-      if (coupon.discount_type === "percent") {
-        discount = Math.round((subtotal * coupon.discount_value) / 100);
-      } else if (coupon.discount_type === "fixed") {
-        discount = coupon.discount_value;
-      }
+      if (subtotal >= coupon.min_purchase) {
+        if (coupon.discount_type === "percent") {
+          discount = Math.round((subtotal * coupon.discount_value) / 100);
+        } else if (coupon.discount_type === "fixed") {
+          discount = coupon.discount_value;
+        }
 
-      if (isNaN(discount)) discount = 0;
+        // Giới hạn số tiền giảm nếu có max_discount
+        if (coupon.max_discount > 0) {
+          discount = Math.min(discount, coupon.max_discount);
+        }
+
+        if (isNaN(discount)) discount = 0;
+      } else {
+        await session.abortTransaction();
+        aborted = true;
+        return {
+          statusCode: STATUS_CODES.BAD_REQUEST,
+          success: false,
+          message: `Đơn hàng cần đạt tối thiểu ${coupon.min_purchase} để áp dụng mã giảm giá.`,
+        };
+      }
     }
 
     const shipping_fee = req.body.shippingFee || 0;
@@ -199,7 +214,6 @@ export const getOrdersService = async () => {
   };
 };
 
-
 //tìm theo id đơn hàng
 export const getOrderByIdService = async (orderId, user) => {
   const order = await Order.findById(orderId);
@@ -232,9 +246,9 @@ export const getOrderByIdService = async (orderId, user) => {
 //update order
 
 const allowedTransitions = {
-  pending: ['confirmed', 'cancelled'],
-  confirmed: ['shipped', 'cancelled'],
-  shipped: ['completed'],
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["shipped", "cancelled"],
+  shipped: ["completed"],
   completed: [],
   cancelled: [],
 };
@@ -272,17 +286,13 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
   };
 };
 
-
-
-
 export const cancelOrderService = async (orderId, userId) => {
-
   //ID đơn hàng không hợp lệ
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     return {
       statusCode: 400,
       success: false,
-      message:ORDER_MESSAGES.ID_FAIL,
+      message: ORDER_MESSAGES.ID_FAIL,
     };
   }
 
@@ -306,7 +316,9 @@ export const cancelOrderService = async (orderId, userId) => {
   }
 
   // Nếu đơn đã được xác nhận hoặc xử lý thì không huỷ được
-  if (["confirmed", "shipped", "completed", "cancelled"].includes(order.status)) {
+  if (
+    ["confirmed", "shipped", "completed", "cancelled"].includes(order.status)
+  ) {
     return {
       statusCode: 400,
       success: false,
@@ -324,4 +336,3 @@ export const cancelOrderService = async (orderId, userId) => {
     data: order,
   };
 };
-
