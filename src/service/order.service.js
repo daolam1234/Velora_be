@@ -161,18 +161,21 @@ export const createOrderService = async (req) => {
 
     await order.save({ session });
 
-    const cart = await Cart.findOne({ user_id: req.user._id });
-    if (cart) {
-      cart.products = cart.products.filter((cartItem) => {
-        const ordered = items.find(
-          (item) =>
-            item.productId.toString() === cartItem.product_id.toString() &&
-            item.variantId === cartItem.variant_id?.toString()
-        );
-        return !ordered;
-      });
-      await cart.save({ session });
-    }
+   const cart = await Cart.findOne({ user: req.user._id });
+
+if (cart) {
+  
+  cart.items = cart.items.filter((cartItem) => {
+    const ordered = items.find(
+      (item) =>
+        item.productId?.toString() === cartItem.product?.toString() &&
+        item.variantId?.toString() === cartItem.variant?.toString()
+    );
+    return !ordered; // giữ lại những sản phẩm chưa đặt hàng
+  });
+
+  await cart.save({ session });
+}
 
     await session.commitTransaction();
     return {

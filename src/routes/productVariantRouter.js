@@ -3,7 +3,7 @@ import { createVariant, deleteVariant, forceDeleteVariant, getDeletedVariants, g
 
 const productVariantRouter = Router();
 
-productVariantRouter.get("/", getProductVariants);
+productVariantRouter.get("/", getProductVariants);   //router này lấy cả biến thể theo sản phẩm
 productVariantRouter.get("/deleted",getDeletedVariants);
 productVariantRouter.get("/:id", getVariantById);
 productVariantRouter.post("/", createVariant);
