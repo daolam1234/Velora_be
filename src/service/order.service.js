@@ -161,7 +161,9 @@ export const createOrderService = async (req) => {
 
     await order.save({ session });
 
-   const cart = await Cart.findOne({ user: req.user._id });
+    //Check xem mua từ giỏ hàng hay mua ngay
+    if(req.body.isFromCart){
+const cart = await Cart.findOne({ user: req.user._id });
 
 if (cart) {
   
@@ -176,6 +178,8 @@ if (cart) {
 
   await cart.save({ session });
 }
+    }
+   
 
     await session.commitTransaction();
     return {
@@ -348,4 +352,58 @@ export const cancelOrderService = async (orderId, userId) => {
     message: ORDER_MESSAGES.CANCEL_SUCCESS,
     data: order,
   };
+};
+
+// Update thông tin đơn hàng user khi nhập sai thông tin
+export const updateOrderInfoController = async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, addressLine, note } = req.body;
+
+  try {
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Chỉ cho sửa khi đơn hàng chưa xác nhận
+    if (order.status !== "pending") {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Không thể chỉnh sửa khi đơn đã được xử lý",
+        });
+    }
+
+    // Kiểm tra xem đơn hàng có thuộc user này không
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Không có quyền chỉnh sửa đơn hàng này",
+        });
+    }
+
+    // Cập nhật thông tin
+    order.shippingAddress.name = name;
+    order.shippingAddress.phone = phone;
+    order.shippingAddress.addressLine = addressLine;
+    order.note = note;
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cập nhật thông tin đơn hàng thành công",
+      data: order,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi máy chủ", error });
+  }
 };
