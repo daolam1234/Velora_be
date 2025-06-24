@@ -6,6 +6,7 @@ import Cart from "../models/Cart.js";
 import Order from "../models/Order.js";
 import { ORDER_MESSAGES } from "../constant/messages.js";
 import { STATUS_CODES } from "../constant/statusCodes.js";
+import OrderCancelLog from "../models/OrderCancelLog.js";
 
 export const createOrderService = async (req) => {
   const session = await mongoose.startSession();
@@ -294,7 +295,27 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
 };
 
 export const cancelOrderService = async (orderId, userId) => {
-  //ID đơn hàng không hợp lệ
+  // Giới hạn: max 3 lần hủy mỗi ngày
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const cancelCountToday = await OrderCancelLog.countDocuments({
+    user: userId,
+    cancelledAt: { $gte: todayStart, $lte: todayEnd },
+  });
+
+  if (cancelCountToday >= 3) {
+    return {
+      statusCode: 429,
+      success: false,
+      message: "Bạn đã vượt quá số lần hủy đơn hàng trong ngày.",
+    };
+  }
+
+  // Kiểm tra hợp lệ
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     return {
       statusCode: 400,
@@ -304,7 +325,6 @@ export const cancelOrderService = async (orderId, userId) => {
   }
 
   const order = await Order.findById(orderId);
-
   if (!order) {
     return {
       statusCode: 404,
@@ -313,7 +333,6 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  // Chỉ huỷ được nếu đơn thuộc về user hiện tại
   if (order.user.toString() !== userId.toString()) {
     return {
       statusCode: 403,
@@ -322,7 +341,6 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  // Nếu đơn đã được xác nhận hoặc xử lý thì không huỷ được
   if (
     ["confirmed", "shipped", "completed", "cancelled"].includes(order.status)
   ) {
@@ -333,11 +351,10 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  // Cập nhật trạng thái
+  // ✅ Cập nhật trạng thái và hoàn lại hàng
   order.status = "cancelled";
   await order.save();
 
-  // Trả lại hàng
   for (const item of order.items) {
     const variant = await ProductVariant.findById(item.variantId);
     if (variant) {
@@ -346,6 +363,12 @@ export const cancelOrderService = async (orderId, userId) => {
     }
   }
 
+  // ✅ Ghi log hủy đơn
+  await OrderCancelLog.create({
+    user: userId,
+    order: orderId,
+  });
+
   return {
     statusCode: 200,
     success: true,
@@ -353,6 +376,7 @@ export const cancelOrderService = async (orderId, userId) => {
     data: order,
   };
 };
+
 
 // Update thông tin đơn hàng user khi nhập sai thông tin
 export const updateOrderInfoController = async (req, res) => {
