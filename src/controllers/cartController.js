@@ -364,18 +364,18 @@ export const clearCart = async (req, res, next) => {
       });
     }
 
-    // Trả lại số lượng tồn kho cho từng sản phẩm/biến thể
-    for (const item of cart.items) {
-      if (item.variant) {
-        await ProductVariant.findByIdAndUpdate(item.variant, {
-          $inc: { stock_quantity: item.quantity },
-        });
-      } else {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock_quantity: item.quantity },
-        });
-      }
-    }
+    // // Trả lại số lượng tồn kho cho từng sản phẩm/biến thể
+    // for (const item of cart.items) {
+    //   if (item.variant) {
+    //     await ProductVariant.findByIdAndUpdate(item.variant, {
+    //       $inc: { stock_quantity: item.quantity },
+    //     });
+    //   } else {
+    //     await Product.findByIdAndUpdate(item.product, {
+    //       $inc: { stock_quantity: item.quantity },
+    //     });
+    //   }
+    // }
     cart.items = [];
     await cart.save();
 
