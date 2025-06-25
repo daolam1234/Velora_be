@@ -6,6 +6,7 @@ import Cart from "../models/Cart.js";
 import Order from "../models/Order.js";
 import { ORDER_MESSAGES } from "../constant/messages.js";
 import { STATUS_CODES } from "../constant/statusCodes.js";
+import OrderCancelLog from "../models/OrderCancelLog.js";
 
 export const createOrderService = async (req) => {
   const session = await mongoose.startSession();
@@ -161,18 +162,25 @@ export const createOrderService = async (req) => {
 
     await order.save({ session });
 
-    const cart = await Cart.findOne({ user_id: req.user._id });
-    if (cart) {
-      cart.products = cart.products.filter((cartItem) => {
-        const ordered = items.find(
-          (item) =>
-            item.productId.toString() === cartItem.product_id.toString() &&
-            item.variantId === cartItem.variant_id?.toString()
-        );
-        return !ordered;
-      });
-      await cart.save({ session });
+    //Check xem mua từ giỏ hàng hay mua ngay
+    if(req.body.isFromCart){
+const cart = await Cart.findOne({ user: req.user._id });
+
+if (cart) {
+  
+  cart.items = cart.items.filter((cartItem) => {
+    const ordered = items.find(
+      (item) =>
+        item.productId?.toString() === cartItem.product?.toString() &&
+        item.variantId?.toString() === cartItem.variant?.toString()
+    );
+    return !ordered; // giữ lại những sản phẩm chưa đặt hàng
+  });
+
+  await cart.save({ session });
+}
     }
+   
 
     await session.commitTransaction();
     return {
@@ -287,7 +295,27 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
 };
 
 export const cancelOrderService = async (orderId, userId) => {
-  //ID đơn hàng không hợp lệ
+  // Giới hạn: max 3 lần hủy mỗi ngày
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const cancelCountToday = await OrderCancelLog.countDocuments({
+    user: userId,
+    cancelledAt: { $gte: todayStart, $lte: todayEnd },
+  });
+
+  if (cancelCountToday >= 3) {
+    return {
+      statusCode: 429,
+      success: false,
+      message: "Bạn đã vượt quá số lần hủy đơn hàng trong ngày.",
+    };
+  }
+
+  // Kiểm tra hợp lệ
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     return {
       statusCode: 400,
@@ -297,7 +325,6 @@ export const cancelOrderService = async (orderId, userId) => {
   }
 
   const order = await Order.findById(orderId);
-
   if (!order) {
     return {
       statusCode: 404,
@@ -306,7 +333,6 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  // Chỉ huỷ được nếu đơn thuộc về user hiện tại
   if (order.user.toString() !== userId.toString()) {
     return {
       statusCode: 403,
@@ -315,7 +341,6 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  // Nếu đơn đã được xác nhận hoặc xử lý thì không huỷ được
   if (
     ["confirmed", "shipped", "completed", "cancelled"].includes(order.status)
   ) {
@@ -326,11 +351,10 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  // Cập nhật trạng thái
+  // ✅ Cập nhật trạng thái và hoàn lại hàng
   order.status = "cancelled";
   await order.save();
 
-  // Trả lại hàng
   for (const item of order.items) {
     const variant = await ProductVariant.findById(item.variantId);
     if (variant) {
@@ -339,10 +363,71 @@ export const cancelOrderService = async (orderId, userId) => {
     }
   }
 
+  // ✅ Ghi log hủy đơn
+  await OrderCancelLog.create({
+    user: userId,
+    order: orderId,
+  });
+
   return {
     statusCode: 200,
     success: true,
     message: ORDER_MESSAGES.CANCEL_SUCCESS,
     data: order,
   };
+};
+
+
+// Update thông tin đơn hàng user khi nhập sai thông tin
+export const updateOrderInfoController = async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, addressLine, note } = req.body;
+
+  try {
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Chỉ cho sửa khi đơn hàng chưa xác nhận
+    if (order.status !== "pending") {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Không thể chỉnh sửa khi đơn đã được xử lý",
+        });
+    }
+
+    // Kiểm tra xem đơn hàng có thuộc user này không
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Không có quyền chỉnh sửa đơn hàng này",
+        });
+    }
+
+    // Cập nhật thông tin
+    order.shippingAddress.name = name;
+    order.shippingAddress.phone = phone;
+    order.shippingAddress.addressLine = addressLine;
+    order.note = note;
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cập nhật thông tin đơn hàng thành công",
+      data: order,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi máy chủ", error });
+  }
 };
