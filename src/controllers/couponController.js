@@ -102,6 +102,28 @@ export const updateCoupon = async (req, res) => {
   }
 };
 
+// Lấy danh sách coupon công khai (đã active và còn hiệu lực)
+export const getPublicCoupons = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const coupons = await Coupon.find({
+      is_active: true,
+      isDeleted: false,
+      start_date: { $lte: now }, // Đã bắt đầu
+      $or: [
+        { end_date: { $gte: now } }, // Chưa hết hạn
+        { end_date: null },           // Hoặc không có ngày kết thúc
+      ],
+    });
+
+    res.json({ status: true, data: coupons });
+  } catch (error) {
+    console.error('Error fetching coupons:', error);
+    res.status(500).json({ status: false, message: 'Lỗi máy chủ', error: error.message });
+  }
+};
+
 // Vô hiệu hoá coupon
 export const deleteCoupon = async (req, res) => {
   try {
