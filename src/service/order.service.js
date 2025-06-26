@@ -214,7 +214,7 @@ export const getOrdersByUserService = async (userId) => {
 };
 
 export const getOrdersService = async () => {
-  const orders = await Order.find().sort({ createdAt: -1 });
+  const orders = await Order.find().sort({ createdAt: -1 }).populate("user", "full_name");
   return {
     message: ORDER_MESSAGES.GET_ORDERS_SUCCESS,
     status: true,
