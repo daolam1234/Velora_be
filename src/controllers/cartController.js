@@ -314,19 +314,19 @@ export const removeFromCart = async (req, res, next) => {
       });
     }
 
-    // // ✅ Trả lại toàn bộ số lượng về kho
-    // const qtyToReturn = cart.items[itemIndex].quantity;
-    // if (variant_id) {
-    //   await ProductVariant.findByIdAndUpdate(
-    //     variant_id,
-    //     { $inc: { stock_quantity: qtyToReturn } }
-    //   );
-    // } else {
-    //   await Product.findByIdAndUpdate(
-    //     product_id,
-    //     { $inc: { stock_quantity: qtyToReturn } }
-    //   );
-    // }
+    // ✅ Trả lại toàn bộ số lượng về kho
+    const qtyToReturn = cart.items[itemIndex].quantity;
+    if (variant_id) {
+      await ProductVariant.findByIdAndUpdate(
+        variant_id,
+        { $inc: { stock_quantity: qtyToReturn } }
+      );
+    } else {
+      await Product.findByIdAndUpdate(
+        product_id,
+        { $inc: { stock_quantity: qtyToReturn } }
+      );
+    }
 
     // ✅ Xóa item khỏi giỏ
     cart.items.splice(itemIndex, 1);
