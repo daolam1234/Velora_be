@@ -8,7 +8,11 @@ const couponSchema = new mongoose.Schema({
   max_discount: { type: Number, default: 0 },
   start_date: { type: Date },
   end_date: { type: Date },
-  is_active: { type: Boolean, default: true }
+  is_active: { type: Boolean, default: true },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
   versionKey: false

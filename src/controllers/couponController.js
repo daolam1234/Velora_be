@@ -24,7 +24,7 @@ export const createCoupon = async (req, res) => {
     });
     res.status(STATUS_CODES.CREATED).json({ status: true, message: COUPON_MESSAGES.CREATE_SUCCESS, data: coupon });
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
+    res.status(STATUS_CODES.SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 
@@ -46,7 +46,7 @@ export const getAllCoupons = async (req, res) => {
       data: coupons
     });
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({
+    res.status(STATUS_CODES.SERVER_ERROR).json({
       status: false,
       message: COUPON_MESSAGES.SERVER_ERROR,
       error: error.message
@@ -73,7 +73,7 @@ export const getCouponById = async (req, res) => {
       data: coupon
     });
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({
+    res.status(STATUS_CODES.SERVER_ERROR).json({
       status: false,
       message: COUPON_MESSAGES.SERVER_ERROR,
       error: error.message
@@ -98,11 +98,11 @@ export const updateCoupon = async (req, res) => {
     }
     res.json({ status: true, message: COUPON_MESSAGES.UPDATE_SUCCESS, data: coupon });
   } catch (error) {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
+    res.status(STATUS_CODES.SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 
-// Xóa mềm coupon
+// Vô hiệu hoá coupon
 export const deleteCoupon = async (req, res) => {
   try {
     const { id } = req.params;
@@ -115,6 +115,77 @@ export const deleteCoupon = async (req, res) => {
     res.status(STATUS_CODES.SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
+
+// Xóa mềm coupon
+export const softDeleteCoupon = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const coupon = await Coupon.findById(id);
+
+    if (!coupon) {
+      return res.status(404).json({ message: "Coupon not found" ,status:false});
+    }
+
+    if (coupon.isDeleted) {
+      return res.status(400).json({ message: "Coupon already deleted" ,status:false});
+    }
+
+    coupon.isDeleted = true;
+    await coupon.save();
+
+    return res.json({ message: "Coupon soft deleted successfully" ,data: coupon,status:true});
+  } catch (error) {
+    res.status(STATUS_CODES.SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
+  }
+};
+
+// Lấy coupon chưa xoá
+export const getCoupons = async (req, res) => {
+  try {
+    const coupons = await Coupon.find({ isDeleted: false });
+    return res.json(coupons);
+  } catch (error) {
+    res.status(STATUS_CODES.SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
+  }
+};
+
+// Lấy coupon đã xoá mềm
+export const getDeletedCoupons = async (req, res) => {
+  try {
+    const coupons = await Coupon.find({ isDeleted: true });
+    return res.json(coupons);
+  } catch (error) {
+    res.status(STATUS_CODES.SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
+  }
+};
+
+// Khôi phục coupon
+export const restoreCoupon = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const coupon = await Coupon.findById(id);
+
+    if (!coupon) {
+      return res.status(404).json({ message: "Coupon not found" });
+    }
+
+    if (!coupon.isDeleted) {
+      return res.status(400).json({ message: "Coupon is not deleted" });
+    }
+
+    coupon.isDeleted = false;
+    await coupon.save();
+
+    return res.json({ message: "Coupon restored successfully" });
+  } catch (error) {
+    res.status(STATUS_CODES.SERVER_ERROR).json({ status: false, message: COUPON_MESSAGES.SERVER_ERROR, error: error.message });
+  }
+};
+
+
+
 
 export const validateCouponForUser = async (req, res) => {
   try {
