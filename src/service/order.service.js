@@ -18,7 +18,7 @@ export const createOrderService = async (req) => {
     const {
       shippingAddress,
       shippingMethod,
-      payment_method,
+      paymentMethod,
       items,
       couponCode = req.body.couponCode || req.body.coupon?.code,
       note,
@@ -142,6 +142,7 @@ export const createOrderService = async (req) => {
     const shipping_fee = req.body.shippingFee || 0;
     const final_price = subtotal + shipping_fee - discount;
 
+
     const order = new Order({
       user: req.user._id,
       items: orderItems,
@@ -156,7 +157,7 @@ export const createOrderService = async (req) => {
         : undefined,
       shippingAddress,
       note,
-      paymentMethod: payment_method,
+      paymentMethod: paymentMethod,
       status: "pending",
     });
 

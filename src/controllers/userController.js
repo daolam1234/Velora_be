@@ -49,7 +49,7 @@ export const getDetailUser = async (req, res) => {
       const { id } = req.params;
 
       // Chỉ cho phép người dùng lấy thông tin chính họ
-      if (req.user._id.toString() !== id) {
+      if (req.user.role !== "admin" && req.user._id.toString() !== id) {
         return res
           .status(403)
           .json({ message: "Không có quyền truy cập thông tin người khác" });

@@ -1,9 +1,13 @@
 import express from "express";
-import { cancelOrder, createOrder, getOrderById, getOrders, getOrdersByUser, updateOrder } from "../controllers/orderController.js";
+import { cancelOrder, checkResultPaymentVNPay, createOrder, getOrderById, getOrders, getOrdersByUser, paymentVNPay, updateOrder } from "../controllers/orderController.js";
 import { verifyAdmin, verifyToken } from "../middlewares/auth.js";
 import { updateOrderInfoController } from "../service/order.service.js";
 
 const OrderRouter = express.Router();
+
+OrderRouter.get("/create_payment" , paymentVNPay);
+
+OrderRouter.get("/check_payment" , checkResultPaymentVNPay);
 
 // Tao đơn hàng mới
 OrderRouter.post("/", verifyToken, createOrder);
@@ -25,5 +29,7 @@ OrderRouter.put("/:orderId/cancel", verifyToken, cancelOrder);
 
 //Update thông tin đơn hàng user khi user nhập sai
 OrderRouter.put("/:id/update-info", verifyToken, updateOrderInfoController);
+
+
 
 export default OrderRouter; 
