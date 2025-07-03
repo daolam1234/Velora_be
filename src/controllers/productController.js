@@ -60,15 +60,15 @@ export const getProducts = async (req, res) => {
       if (size) {
         variantMatch["variants.size"] = size;
       }
-if (color) {
+      if (color) {
         variantMatch["variants.color"] = { $regex: color, $options: "i" };
       }
 
-    if (minPrice || maxPrice) {
-  variantMatch["variants.discount_price"] = {};
-  if (minPrice) variantMatch["variants.discount_price"].$gte = parseFloat(minPrice);
-  if (maxPrice) variantMatch["variants.discount_price"].$lte = parseFloat(maxPrice);
-}
+      if (minPrice || maxPrice) {
+        variantMatch["variants.discount_price"] = {};
+        if (minPrice) variantMatch["variants.discount_price"].$gte = parseFloat(minPrice);
+        if (maxPrice) variantMatch["variants.discount_price"].$lte = parseFloat(maxPrice);
+      }
 
       pipeline.push({
         $match: variantMatch,
@@ -123,14 +123,14 @@ export const getProductsByCategory = async (req, res) => {
       isDeleted: false,
     }).populate("category_id");
 
-  
+
 
     return res.status(200).json({
       success: true,
-      message: products.length === 0 
-        ? "Không có sản phẩm nào trong danh mục này" 
+      message: products.length === 0
+        ? "Không có sản phẩm nào trong danh mục này"
         : "Lấy sản phẩm theo danh mục thành công",
-      data: products,   
+      data: products,
     });
   } catch (error) {
     console.error("Lỗi truy vấn:", error);
@@ -146,15 +146,15 @@ export const getProductDetail = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const product = await Product.findOne({ _id: id , isDeleted: false }).populate("category_id");
+    const product = await Product.findOne({ _id: id, isDeleted: false }).populate("category_id");
 
     if (!product) {
-      return res.status(STATUS_CODES.NOT_FOUND).json({ message:PRODUCT_MESSAGES.NOT_FOUND });
+      return res.status(STATUS_CODES.NOT_FOUND).json({ message: PRODUCT_MESSAGES.NOT_FOUND });
     }
 
     res.status(STATUS_CODES.OK).json(product);
   } catch (error) {
-    res.status(STATUS_CODES.SERVER_ERROR).json({ message:PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
+    res.status(STATUS_CODES.SERVER_ERROR).json({ message: PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 
@@ -196,20 +196,25 @@ export const getDeletedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-   const { error, value } = productSchema.validate(req.body);
+    // ✅ Bước này không cần nữa vì middleware đã gán req.body.images
+    // if (req.cloudinaryImages && Array.isArray(req.cloudinaryImages)) {
+    //   req.body.images = req.cloudinaryImages;
+    // }
+
+    // ✅ Validate dữ liệu đầu vào
+    const { error, value } = productSchema.validate(req.body);
     if (error) {
-      // Trả về tất cả lỗi nếu có
       const messages = error.details.map((err) => err.message);
       return res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: messages });
     }
 
-    // Kiểm tra trùng tên sản phẩm
+    // ✅ Kiểm tra trùng tên sản phẩm
     const existingProduct = await Product.findOne({ name: value.name });
     if (existingProduct) {
       return res.status(409).json({ message: "Tên sản phẩm đã tồn tại" });
     }
 
-    // Tạo mới sản phẩm
+    // ✅ Tạo và lưu sản phẩm mới
     const newProduct = new Product(value);
     await newProduct.save();
 
@@ -226,19 +231,35 @@ export const createProduct = async (req, res) => {
 };
 
 
+
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
 
   try {
+    const existingProduct = await Product.findOne({ _id: id, isDeleted: false });
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm để cập nhật" });
+    }
+
+    // ✅ Xử lý ảnh:
+    // Nếu upload ảnh thì middleware đã gán req.body.images = "url"
+    // Nếu nhập URL thủ công thì cũng là req.body.images = "url"
+    // Ta đảm bảo luôn là mảng khi lưu
+    if (typeof updateData.images === "string") {
+  updateData.images = [updateData.images.trim()];
+}
+
+
+    // Cập nhật thời gian
+    updateData.updatedAt = new Date();
+
     const updatedProduct = await Product.findOneAndUpdate(
       { _id: id, isDeleted: false },
       updateData,
       { new: true }
     );
-    if (!updatedProduct) {
-      return res.status(404).json({ message: "Không tìm thấy sản phẩm để cập nhật" });
-    }
+
     return res.status(200).json({ message: "Cập nhật sản phẩm thành công", product: updatedProduct });
   } catch (error) {
     return res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -252,13 +273,13 @@ export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(id);
     if (!product) {
-      return res.status(STATUS_CODES.NOT_FOUND).json({ message:PRODUCT_MESSAGES.NOT_FOUND });
+      return res.status(STATUS_CODES.NOT_FOUND).json({ message: PRODUCT_MESSAGES.NOT_FOUND });
     }
-   product.isDeleted = true;
+    product.isDeleted = true;
     await product.save();
-    res.status(STATUS_CODES.OK).json({ message:PRODUCT_MESSAGES.DELETE_SUCCESS, product: product });
+    res.status(STATUS_CODES.OK).json({ message: PRODUCT_MESSAGES.DELETE_SUCCESS, product: product });
   } catch (error) {
-    res.status(STATUS_CODES.SERVER_ERROR).json({ message:PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
+    res.status(STATUS_CODES.SERVER_ERROR).json({ message: PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
   }
 };
 

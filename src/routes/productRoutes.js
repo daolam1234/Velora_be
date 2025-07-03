@@ -10,15 +10,26 @@ import {
   restoreProduct,
   forceDeleteProduct,
 } from "../controllers/productController.js";
+import multer from "multer";
+import { handleProductImage, uploadProductImage } from "../middlewares/uploadCloud.js";
+
+
 
 const productRouter = Router();
+const upload = multer();
 
 productRouter.get("/", getProducts);
 productRouter.get("/deleted",getDeletedProducts);
 productRouter.get('/by-category/:categoryId', getProductsByCategory);
 productRouter.get("/:id", getProductDetail);
-productRouter.post("/", createProduct);
-productRouter.put("/:id", updateProduct);
+
+
+productRouter.post("/", uploadProductImage, handleProductImage, createProduct);
+
+
+
+productRouter.put("/:id", uploadProductImage, handleProductImage, updateProduct);
+
 productRouter.delete("/:id", deleteProduct);
 productRouter.patch("/restore/:id",restoreProduct);
 productRouter.delete("/forcedelete/:id",forceDeleteProduct)
