@@ -10,13 +10,13 @@ import {
   restoreProduct,
   forceDeleteProduct,
 } from "../controllers/productController.js";
-import multer from "multer";
+
 import { handleProductImage, uploadProductImage } from "../middlewares/uploadCloud.js";
 
 
 
 const productRouter = Router();
-const upload = multer();
+
 
 productRouter.get("/", getProducts);
 productRouter.get("/deleted",getDeletedProducts);
