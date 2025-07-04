@@ -10,6 +10,7 @@ import couponRouter from "./couponRoute.js";
 import OrderRouter from "./orderRouter.js";
 import blogCategoryRouter from "./blogCategoryRouter.js";
 import blogPostRouter from "./blogRouter.js";
+import dashboardRouter from "./dashboardRouter.js";
 
 const routes = Router();
 
@@ -24,6 +25,7 @@ routes.use("/coupons", couponRouter);
 routes.use("/orders", OrderRouter);
 routes.use("/blogcategories", blogCategoryRouter)
 routes.use("/blogs", blogPostRouter)
+routes.use("/dashboard", dashboardRouter)
 
 
 // routes.use("/products", hanldeProduct...)
