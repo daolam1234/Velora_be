@@ -194,7 +194,7 @@ if (cart) {
     if (!aborted) {
       await session.abortTransaction();
     }
-    console.error("Error creating order:", error);
+
     return {
       statusCode: STATUS_CODES.SERVER_ERROR,
       success: false,
