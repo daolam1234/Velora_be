@@ -15,6 +15,11 @@ export const productSchema = Joi.object({
 
   origin: Joi.string().optional(),
 
+    brand: Joi.string().required().messages({
+    "any.required": "Thương hiệu không được để trống",
+    "string.empty": "Thương hiệu không được để trống",
+  }),
+  
   description: Joi.string().optional(),
 
   images: Joi.array().items(Joi.string().uri()).min(1).required().messages({

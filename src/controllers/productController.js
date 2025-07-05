@@ -40,6 +40,20 @@ export const getProducts = async (req, res) => {
     }
 
     const pipeline = [
+       {
+    $lookup: {
+      from: "categories", // tên collection trong MongoDB
+      localField: "category_id",
+      foreignField: "_id",
+      as: "category", // gán kết quả vào "category"
+    },
+  },
+  {
+    $unwind: {
+      path: "$category",
+      preserveNullAndEmptyArrays: true, // nếu không có category vẫn trả về
+    },
+  },
       {
         $lookup: {
           from: "productvariants", // Collection name in MongoDB
