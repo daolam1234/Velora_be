@@ -3,6 +3,7 @@ import { PRODUCT_MESSAGES } from '../constant/messages.js';
 import { STATUS_CODES } from '../constant/statusCodes.js';
 import Product from '../models/Product.js';
 import { productSchema } from '../validation/product.js';
+import ProductReview from '../models/ProductReview.js';
 
 export const getProducts = async (req, res) => {
   try {
@@ -166,7 +167,13 @@ export const getProductDetail = async (req, res) => {
       return res.status(STATUS_CODES.NOT_FOUND).json({ message: PRODUCT_MESSAGES.NOT_FOUND });
     }
 
-    res.status(STATUS_CODES.OK).json(product);
+    // Lấy bình luận của sản phẩm này
+    const reviews = await ProductReview.find({ product_id: id }, 'comment user_name comment_time');
+
+    res.status(STATUS_CODES.OK).json({
+      ...product.toObject(),
+      reviews
+    });
   } catch (error) {
     res.status(STATUS_CODES.SERVER_ERROR).json({ message: PRODUCT_MESSAGES.SERVER_ERROR, error: error.message });
   }
