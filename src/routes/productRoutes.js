@@ -9,6 +9,7 @@ import {
   getDeletedProducts,
   restoreProduct,
   forceDeleteProduct,
+  getNewestProducts,
 } from "../controllers/productController.js";
 
 const productRouter = Router();
@@ -22,4 +23,7 @@ productRouter.put("/:id", updateProduct);
 productRouter.delete("/:id", deleteProduct);
 productRouter.patch("/restore/:id",restoreProduct);
 productRouter.delete("/forcedelete/:id",forceDeleteProduct)
+productRouter.get("/productnew",getNewestProducts)
+
+
 export default productRouter;
