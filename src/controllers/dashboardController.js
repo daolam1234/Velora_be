@@ -115,10 +115,21 @@ export const getRevenueByFilter = async (req, res) => {
 
 export const getTopSellingProducts = async (req, res) => {
   try {
-    const limit = Number(req.query.limit) || 5;
+    const limit = Number(req.query.limit) || 12;
+    const range = req.query.range || "month";
+
+  // Tính ngày bắt đầu theo range
+    const fromDate = new Date();
+    if (range === "day") {
+      fromDate.setHours(0, 0, 0, 0); // từ đầu ngày hôm nay
+    } else if (range === "week") {
+      fromDate.setDate(fromDate.getDate() - 7);
+    } else if (range === "month") {
+      fromDate.setDate(fromDate.getDate() - 30);
+    }
 
     const result = await Order.aggregate([
-      { $match: { status: "completed" } }, // Chỉ lấy đơn hàng đã hoàn tất
+      { $match: { status: "completed",  createdAt: { $gte: fromDate } } }, // Chỉ lấy đơn hàng đã hoàn tất
       { $unwind: "$items" }, // Tách từng sản phẩm trong đơn
       {
         $group: {
@@ -142,7 +153,7 @@ export const getTopSellingProducts = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Lấy top sản phẩm bán chạy thành công",
+      message: `Top ${limit} sản phẩm bán chạy theo khoảng: ${range}`,
       data: result,
     });
   } catch (error) {
