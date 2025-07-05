@@ -321,3 +321,28 @@ export const forceDeleteProduct = async (req, res) => {
     return res.status(500).json({ message: "Lỗi khi xóa sản phẩm", error: error.message });
   }
 };
+
+
+//Sản phẩm mới nhất 
+export const getNewestProducts = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 8;
+
+    const products = await Product.find({ isDeleted: false })
+      .sort({ createdAt: -1 }) // mới nhất
+      .limit(limit)
+      .populate("category_id");
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy sản phẩm mới nhất thành công",
+      data: products,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+};
