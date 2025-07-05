@@ -166,4 +166,39 @@ export const checkResultPaymentVNPay = async (req,res)=>{
   }
 }
 
+//hàm xác nhận nhận đơn hàng cho người dùng 
+export const confirmReceivedOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user._id;
 
+    // Tìm đơn hàng
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Kiểm tra quyền sở hữu
+    if (order.user.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Bạn không có quyền với đơn hàng này" });
+    }
+
+    // Chỉ cho phép xác nhận khi đang ở trạng thái 'shipped'
+    if (order.status !== "shipped") {
+      return res.status(400).json({ success: false, message: "Chỉ có thể xác nhận đơn hàng đang giao" });
+    }
+
+    // Cập nhật trạng thái
+    order.status = "completed";
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Đơn hàng đã được xác nhận là hoàn thành",
+      data: order,
+    });
+  } catch (error) {
+    console.error("Lỗi khi xác nhận đơn hàng:", error);
+    return res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+};
