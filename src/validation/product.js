@@ -28,11 +28,6 @@ export const productSchema = Joi.object({
     "any.required": "Trường images là bắt buộc",
   }),
 
-  stock_quantity: Joi.number().integer().min(0).required().messages({
-    "number.base": "Số lượng tồn kho phải là số",
-    "number.min": "Số lượng tồn kho không được âm",
-    "any.required": "Số lượng tồn kho là bắt buộc",
-  }),
 
   price: Joi.number().min(0).required().messages({
     "number.base": "Giá phải là số",

@@ -221,7 +221,6 @@ export const createProduct = async (req, res) => {
     // if (req.cloudinaryImages && Array.isArray(req.cloudinaryImages)) {
     //   req.body.images = req.cloudinaryImages;
     // }
-
     // ✅ Validate dữ liệu đầu vào
     const { error, value } = productSchema.validate(req.body);
     if (error) {

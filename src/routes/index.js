@@ -12,6 +12,7 @@ import blogCategoryRouter from "./blogCategoryRouter.js";
 import blogPostRouter from "./blogRouter.js";
 import dashboardRouter from "./dashboardRouter.js";
 import reviewRouter from './reviewRouter.js';
+import uploadRouter from "./upload.js";
 
 const routes = Router();
 
@@ -28,6 +29,7 @@ routes.use("/blogcategories", blogCategoryRouter)
 routes.use("/blogs", blogPostRouter)
 routes.use("/dashboard", dashboardRouter)
 routes.use('/reviews', reviewRouter);
+routes.use('/upload', uploadRouter);
 
 // routes.use("/products", hanldeProduct...)
 // routes.use("/products", hanldeProduct...)
