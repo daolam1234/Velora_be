@@ -7,6 +7,7 @@ import Order from "../models/Order.js";
 import { ORDER_MESSAGES } from "../constant/messages.js";
 import { STATUS_CODES } from "../constant/statusCodes.js";
 import OrderCancelLog from "../models/OrderCancelLog.js";
+import { sendMail } from "./mail.service.js";
 
 export const createOrderService = async (req) => {
   const session = await mongoose.startSession();
@@ -179,10 +180,45 @@ if (cart) {
   });
 
   await cart.save({ session });
+
+
+
 }
+
     }
    
+  await sendMail({
+  to: req.user.email,
+  subject: `Đặt hàng thành công tại Velora - ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
+  html: `
+    <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
+      <h2 style="color: #2c3e50;">Xin chào <span style="color:#3498db">${req.user.username}</span>,</h2>
+      <p>Cảm ơn bạn đã đặt hàng tại <strong>Velora</strong>!</p>
 
+      <table cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin: 10px 0;">
+        <tr>
+          <td><strong>Mã đơn hàng:</strong></td>
+          <td><strong style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Ngày đặt:</strong></td>
+          <td>${new Date().toLocaleString("vi-VN")}</td>
+        </tr>
+        <tr>
+          <td><strong>Trạng thái hiện tại:</strong></td>
+          <td><span style="color: green;"><b>${order.status}</b></span></td>
+        </tr>
+      </table>
+
+      <p style="margin-top: 20px;">Chúng tôi sẽ sớm liên hệ để xác nhận đơn hàng và giao hàng trong thời gian sớm nhất.</p>
+      
+      <p style="font-style: italic; color: #888;">Nếu bạn có bất kỳ thắc mắc nào, hãy liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
+
+      <hr style="margin: 20px 0;" />
+      <p style="text-align: center; color: #999;">Velora Shop 👟<br/>Hân hạnh phục vụ bạn!</p>
+    </div>
+  `,
+});
     await session.commitTransaction();
     return {
       statusCode: STATUS_CODES.CREATED,
@@ -263,7 +299,7 @@ const allowedTransitions = {
 };
 
 export const updateOrderStatusService = async (orderId, newStatus) => {
-  const order = await Order.findById(orderId);
+  const order = await Order.findById(orderId).populate("user");
 
   if (!order) {
     return {
@@ -286,6 +322,40 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
 
   order.status = newStatus;
   await order.save();
+
+ if (order.user?.email) {
+  await sendMail({
+  to: order.user.email,
+  subject: `Cập nhật trạng thái đơn hàng - ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
+  html: `
+    <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
+      <h2 style="color: #2c3e50;">Xin chào <span style="color:#3498db">${order.user.username}</span>,</h2>
+      <p>Đơn hàng của bạn đã được cập nhật trạng thái như sau:</p>
+
+      <table cellpadding="6" cellspacing="0" style="border-collapse: collapse; margin: 10px 0;">
+        <tr>
+          <td><strong>Mã đơn hàng:</strong></td>
+          <td><strong style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Trạng thái mới:</strong></td>
+          <td><strong style="color: green;">${order.status}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Thời gian cập nhật:</strong></td>
+          <td>${new Date().toLocaleString("vi-VN")}</td>
+        </tr>
+      </table>
+
+      <p>Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ đội ngũ hỗ trợ Velora.</p>
+
+      <hr style="margin: 20px 0;" />
+      <p style="text-align: center; color: #999;">Velora Shop 👟<br/>Cảm ơn bạn đã tin tưởng!</p>
+    </div>
+  `,
+});
+
+  }
 
   return {
     statusCode: STATUS_CODES.OK,
@@ -325,7 +395,7 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  const order = await Order.findById(orderId);
+  const order = await Order.findById(orderId).populate("user");
   if (!order) {
     return {
       statusCode: 404,
@@ -334,7 +404,7 @@ export const cancelOrderService = async (orderId, userId) => {
     };
   }
 
-  if (order.user.toString() !== userId.toString()) {
+if (order.user._id.toString() !== userId.toString()) {
     return {
       statusCode: 403,
       success: false,
@@ -355,6 +425,25 @@ export const cancelOrderService = async (orderId, userId) => {
   // ✅ Cập nhật trạng thái và hoàn lại hàng
   order.status = "cancelled";
   await order.save();
+
+if (order.user?.email) {
+  await sendMail({
+    to: order.user.email,
+    subject: `Hủy đơn hàng ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
+        <h2>Xin chào ${order.user.username},</h2>
+        <p>Đơn hàng của bạn đã được hủy thành công.</p>
+        <p>Mã đơn hàng: <strong>ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></p>
+        <p>Trạng thái mới: <strong style="color:red">${order.status}</strong></p>
+        <p>Nếu có thắc mắc, vui lòng liên hệ bộ phận CSKH của Velora.</p>
+        <br/>
+        <p>Cảm ơn bạn đã sử dụng Velora!</p>
+      </div>
+    `,
+  });
+}
+
 
   for (const item of order.items) {
     const variant = await ProductVariant.findById(item.variantId);

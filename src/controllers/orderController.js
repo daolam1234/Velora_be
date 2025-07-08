@@ -5,6 +5,7 @@ import { createdHandler } from "../utils/createdHandler.js";
 import qs from "querystring"
 import crypto from 'crypto';
 import moment from 'moment';
+import { sendMail } from "../service/mail.service.js";
 
 export const createOrder = async (req, res) => {
   const result = await createOrderService(req);
@@ -173,13 +174,13 @@ export const confirmReceivedOrder = async (req, res) => {
     const userId = req.user._id;
 
     // Tìm đơn hàng
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate("user");
     if (!order) {
       return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
     }
 
     // Kiểm tra quyền sở hữu
-    if (order.user.toString() !== userId.toString()) {
+if (order.user._id.toString() !== userId.toString()) {
       return res.status(403).json({ success: false, message: "Bạn không có quyền với đơn hàng này" });
     }
 
@@ -192,6 +193,21 @@ export const confirmReceivedOrder = async (req, res) => {
     order.status = "completed";
     await order.save();
 
+
+     await sendMail({
+      to: order.user.email,
+      subject: `Đơn hàng ${order._id} đã hoàn tất`,
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
+          <h2>Xin chào ${order.user.username},</h2>
+          <p>Bạn đã xác nhận đã nhận đơn hàng thành công.</p>
+          <p>Mã đơn hàng: <strong>ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></p>
+          <p>Trạng thái mới: <strong style="color: green;">${order.status}</strong></p>
+          <p>Cảm ơn bạn đã mua hàng tại Velora!</p>
+        </div>
+      `,
+    });
+    
     return res.status(200).json({
       success: true,
       message: "Đơn hàng đã được xác nhận là hoàn thành",

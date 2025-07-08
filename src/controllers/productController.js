@@ -10,7 +10,7 @@ export const getProducts = async (req, res) => {
     const {
       search,
       page = 1,
-      limit = 10,
+      limit = 1000,
       isDelete,
       size,
       color,
