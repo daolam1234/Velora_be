@@ -52,9 +52,8 @@ const productVariantSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-}, {
-  timestamps: true // ✅
-});
+}, 	{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, versionKey: false }
+);
 
 productVariantSchema.pre('save', function (next) {
   this.updated_at = new Date();

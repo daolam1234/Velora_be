@@ -1,4 +1,4 @@
-import Banner from "../models/banner.model";
+import Banner from "../models/Banner.js";
 
 // [POST] Tạo banner mới
 export const createBanner = async (req, res) => {

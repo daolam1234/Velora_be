@@ -25,7 +25,7 @@ const [
   topSellingProducts,
 ] = await Promise.all([
   Product.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
-  ProductVariant.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
+  ProductVariant.countDocuments({ isDeleted: false, created_at: { $gte: fromDate } }),
   Blog.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
   User.countDocuments({ created_at: { $gte: fromDate } }),
   Coupon.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
