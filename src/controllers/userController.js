@@ -87,8 +87,8 @@ export const updateUser = async (req, res) => {
                 return res.status(404).json({ message: "Không tìm thấy người dùng." });
             }
 
-            // Check if the user is updating their own information
-            if (req.user._id.toString() !== id) {
+            // Cho phép nếu là chính mình hoặc là admin cập nhật thông tin
+            if (req.user._id.toString() !== id && req.user.role !== "admin") {
                 return res.status(403).json({ message: "Bạn không có quyền cập nhật thông tin người dùng khác." });
             }
 
