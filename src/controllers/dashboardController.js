@@ -8,6 +8,12 @@ import Order from '../models/Order.js';
 
 export const getDashboardOverview = async (req, res) => {
   try {
+
+    const range = Number(req.query.range) || 7;
+
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - range);
+
   // Bỏ totalRevenueResult khỏi Promise.all
 const [
   totalProducts,
@@ -16,21 +22,32 @@ const [
   totalUsers,
   totalCoupons,
   totalOrders,
-  topSellingProducts
+  topSellingProducts,
 ] = await Promise.all([
-  Product.countDocuments({ isDeleted: false }),
-  ProductVariant.countDocuments({ isDeleted: false }),
-  Blog.countDocuments({ isDeleted: false }),
-  User.countDocuments(),
-  Coupon.countDocuments({ isDeleted: false }),
-Order.countDocuments(),
+  Product.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
+  ProductVariant.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
+  Blog.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
+  User.countDocuments({ created_at: { $gte: fromDate } }),
+  Coupon.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
+  Order.countDocuments({
+    status: "completed",
+    createdAt: { $gte: fromDate },
+  }),
   Product.aggregate([
     { $match: { isDeleted: false } },
-    { $project: { name: 1, sold: 1, price: 1, totalRevenue: { $multiply: ["$sold", "$price"] } } },
+    {
+      $project: {
+        name: 1,
+        sold: 1,
+        price: 1,
+        totalRevenue: { $multiply: ["$sold", "$price"] },
+      },
+    },
     { $sort: { sold: -1 } },
-    { $limit: 5 }
-  ])
+    { $limit: 5 },
+  ]),
 ]);
+
 
 const totalRevenueResult = await Order.aggregate([
   {

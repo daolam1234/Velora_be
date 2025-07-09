@@ -92,6 +92,22 @@ export const updateUser = async (req, res) => {
                 return res.status(403).json({ message: "Bạn không có quyền cập nhật thông tin người dùng khác." });
             }
 
+    // 🔍 Kiểm tra email đã tồn tại chưa (nhưng không phải của chính user này)
+      if (email && email !== user.email) {
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail && existingEmail._id.toString() !== id) {
+          return res.status(400).json({ message: "Email đã được sử dụng bởi tài khoản khác." });
+        }
+      }
+
+      // 🔍 Kiểm tra username trùng (nếu cần)
+      if (username && username !== user.username) {
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername && existingUsername._id.toString() !== id) {
+          return res.status(400).json({ message: "Tên đăng nhập đã tồn tại." });
+        }
+      }
+
             // Update user information
             if (full_name) user.full_name = full_name;
             if (username) user.username = username;

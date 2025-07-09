@@ -13,10 +13,10 @@ const productSchema = new mongoose.Schema (
   discount_price: {type: Number,min: 0},
   variation_status: {type: Boolean, default: false},
   isDeleted: {type: Boolean, default: false,},
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
 
-  }
+  }, {
+  timestamps: true 
+}
   
 );
 
