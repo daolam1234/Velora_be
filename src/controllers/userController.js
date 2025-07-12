@@ -235,3 +235,33 @@ export const addUser = async (req, res) => {
     }
 };
 
+
+
+
+export const resetPassword = async (req, res) => {
+  const { email, username, full_name, phone, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng với email này' });
+    }
+
+    if (
+      user.username !== username ||
+      user.full_name !== full_name ||
+      user.phone !== phone
+    ) {
+      return res.status(400).json({ message: 'Thông tin xác thực không chính xác' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({ message: 'Mật khẩu đã được cập nhật thành công' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};

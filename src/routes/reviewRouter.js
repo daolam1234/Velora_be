@@ -1,5 +1,5 @@
 import express from 'express';
-import { addProductReview, getAllProductReviews, deleteProductReview } from '../controllers/reviewsController.js';
+import { addProductReview, getAllProductReviews, deleteProductReview, getReviewsByProductId } from '../controllers/reviewsController.js';
 // import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -12,5 +12,8 @@ router.get('/allreviews', getAllProductReviews);
 
 // Route cho admin xoá bình luận
 router.delete('/deletereview/:review_id', deleteProductReview);
+
+
+router.get('/by-product/:product_id', getReviewsByProductId); 
 
 export default router; 
