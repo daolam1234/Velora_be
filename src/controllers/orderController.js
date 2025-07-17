@@ -6,6 +6,7 @@ import qs from "querystring"
 import crypto from 'crypto';
 import moment from 'moment';
 import { sendMail } from "../service/mail.service.js";
+import { translateStatus } from "../utils/statusOrder.js";
 
 export const createOrder = async (req, res) => {
   const result = await createOrderService(req);
@@ -194,19 +195,81 @@ if (order.user._id.toString() !== userId.toString()) {
     await order.save();
 
 
-     await sendMail({
-      to: order.user.email,
-      subject: `Đơn hàng ${order._id} đã hoàn tất`,
-      html: `
-        <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
-          <h2>Xin chào ${order.user.username},</h2>
-          <p>Bạn đã xác nhận đã nhận đơn hàng thành công.</p>
-          <p>Mã đơn hàng: <strong>ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></p>
-          <p>Trạng thái mới: <strong style="color: green;">${order.status}</strong></p>
-          <p>Cảm ơn bạn đã mua hàng tại Velora!</p>
-        </div>
-      `,
-    });
+await sendMail({
+  to: order.user.email,
+  subject: `Xác nhận đã nhận hàng - ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
+  html: `
+    <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
+      <h2 style="color: #2c3e50;">Xin chào <span style="color:#3498db">${order.user.username}</span>,</h2>
+      <p>Bạn đã xác nhận <strong>đã nhận được đơn hàng</strong>. Cảm ơn bạn đã tin tưởng Velora!</p>
+
+      <h3>🧾 Thông tin đơn hàng:</h3>
+      <table cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin: 10px 0;">
+        <tr><td><strong>Mã đơn hàng:</strong></td><td style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</td></tr>
+        <tr><td><strong>Ngày xác nhận:</strong></td><td>${new Date().toLocaleString("vi-VN")}</td></tr>
+        <tr><td><strong>Trạng thái mới:</strong></td><td><strong style="color: green;">${translateStatus(order.status)}</strong></td></tr>
+      </table>
+
+      <h3>👤 Thông tin người nhận:</h3>
+      <p>
+        <strong>Họ tên:</strong> ${order.shippingAddress?.name || "Không có"}<br/>
+        <strong>SĐT:</strong> ${order.shippingAddress?.phone || "Không có"}<br/>
+        <strong>Địa chỉ:</strong> ${order.shippingAddress?.addressLine || "Không có"}<br/>
+        <strong>Hình thức thanh toán:</strong> ${
+          order.paymentMethod === "cod"
+            ? "Thanh toán khi nhận hàng"
+            : order.paymentMethod === "vnpay"
+            ? "VNPAY"
+            : "Không xác định"
+        }<br/>
+        <strong>Ghi chú:</strong> ${order.note || "Không có ghi chú"}
+      </p>
+
+      <h3>📦 Sản phẩm đã đặt:</h3>
+      <table cellpadding="8" cellspacing="0" border="1" style="border-collapse: collapse; width: 100%;">
+        <thead style="background-color: #f2f2f2;">
+          <tr>
+            <th style="text-align: left;">Sản phẩm</th>
+            <th>Phân loại</th>
+            <th>Giá</th>
+            <th>Số lượng</th>
+            <th>Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${order.items
+            .map(
+              (item) => `
+              <tr>
+                <td>${item.productName}</td>
+                <td>${item.variant.size || ""} ${
+                  item.variant.color ? `- ${item.variant.color}` : ""
+                }</td>
+                <td>${item.price.toLocaleString("vi-VN")}₫</td>
+                <td>${item.quantity}</td>
+                <td>${(item.price * item.quantity).toLocaleString("vi-VN")}₫</td>
+              </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+
+      <h3>💰 Tổng cộng:</h3>
+      <p>
+        <strong>Tạm tính:</strong> ${order.totalAmount.toLocaleString("vi-VN")}₫ <br/>
+        <strong>Phí vận chuyển:</strong> ${32000 .toLocaleString("vi-VN") || "0"}₫ <br/>
+        <strong>Giảm giá:</strong> -${order.discountAmount.toLocaleString("vi-VN")}₫ <br/>
+        <strong style="font-size: 17px;">Tổng thanh toán: <span style="color: #e67e22;">${order.finalAmount.toLocaleString("vi-VN")}₫</span></strong>
+      </p>
+
+      <p style="margin-top: 20px;">Nếu bạn có bất kỳ thắc mắc nào, hãy liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
+
+      <hr style="margin: 20px 0;" />
+      <p style="text-align: center; color: #999;">Velora Shop 👟<br/>Cảm ơn bạn đã tin tưởng!</p>
+    </div>
+  `,
+});
+
     
     return res.status(200).json({
       success: true,

@@ -8,6 +8,7 @@ import { ORDER_MESSAGES } from "../constant/messages.js";
 import { STATUS_CODES } from "../constant/statusCodes.js";
 import OrderCancelLog from "../models/OrderCancelLog.js";
 import { sendMail } from "./mail.service.js";
+import { translateStatus } from "../utils/statusOrder.js";
 
 export const createOrderService = async (req) => {
   const session = await mongoose.startSession();
@@ -187,7 +188,7 @@ if (cart) {
 
     }
    
-  await sendMail({
+await sendMail({
   to: req.user.email,
   subject: `Đặt hàng thành công tại Velora - ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
   html: `
@@ -195,23 +196,64 @@ if (cart) {
       <h2 style="color: #2c3e50;">Xin chào <span style="color:#3498db">${req.user.username}</span>,</h2>
       <p>Cảm ơn bạn đã đặt hàng tại <strong>Velora</strong>!</p>
 
+      <h3>🧾 Thông tin đơn hàng:</h3>
       <table cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin: 10px 0;">
-        <tr>
-          <td><strong>Mã đơn hàng:</strong></td>
-          <td><strong style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></td>
-        </tr>
-        <tr>
-          <td><strong>Ngày đặt:</strong></td>
-          <td>${new Date().toLocaleString("vi-VN")}</td>
-        </tr>
-        <tr>
-          <td><strong>Trạng thái hiện tại:</strong></td>
-          <td><span style="color: green;"><b>${order.status}</b></span></td>
-        </tr>
+        <tr><td><strong>Mã đơn hàng:</strong></td><td style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</td></tr>
+        <tr><td><strong>Ngày đặt:</strong></td><td>${new Date().toLocaleString("vi-VN")}</td></tr>
+        <tr><td><strong>Trạng thái:</strong></td><td style="color: green;"><b>${translateStatus(order.status)}</b></td></tr>
       </table>
 
-      <p style="margin-top: 20px;">Chúng tôi sẽ sớm liên hệ để xác nhận đơn hàng và giao hàng trong thời gian sớm nhất.</p>
-      
+      <h3>👤 Thông tin người nhận:</h3>
+      <p>
+        <strong>Họ tên:</strong> ${shippingAddress.name}<br/>
+        <strong>Số điện thoại:</strong> ${shippingAddress.phone}<br/>
+        <strong>Địa chỉ:</strong> ${shippingAddress.addressLine}<br/>
+<strong>Hình thức thanh toán:</strong> ${
+  order.paymentMethod === 'cod'
+    ? 'Thanh toán khi nhận hàng'
+    : order.paymentMethod === 'vnpay'
+    ? 'VNPAY'
+    : 'Không xác định'
+}<br/>
+        <strong>Ghi chú:</strong> ${note || 'Không có'}
+      </p>
+
+      <h3>📦 Sản phẩm đã đặt:</h3>
+      <table cellpadding="8" cellspacing="0" border="1" style="border-collapse: collapse; width: 100%;">
+        <thead style="background-color: #f2f2f2;">
+          <tr>
+            <th style="text-align: left;">Sản phẩm</th>
+            <th>Phân loại</th>
+            <th>Giá</th>
+            <th>Số lượng</th>
+            <th>Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${order.items
+            .map(
+              (item) => `
+            <tr>
+              <td>${item.productName}</td>
+              <td>${item.variant.size || ''} ${item.variant.color ? `- ${item.variant.color}` : ''}</td>
+              <td>${item.price.toLocaleString("vi-VN")}₫</td>
+              <td>${item.quantity}</td>
+              <td>${(item.price * item.quantity).toLocaleString("vi-VN")}₫</td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+
+      <h3>💰 Tổng cộng:</h3>
+      <p>
+        <strong>Tạm tính:</strong> ${order.totalAmount.toLocaleString("vi-VN")}₫ <br/>
+        <strong>Phí vận chuyển:</strong> ${shipping_fee.toLocaleString("vi-VN")}₫ <br/>
+        <strong>Giảm giá:</strong> -${order.discountAmount.toLocaleString("vi-VN")}₫ <br/>
+        <strong style="font-size: 17px;">Tổng thanh toán: <span style="color: #e67e22;">${order.finalAmount.toLocaleString("vi-VN")}₫</span></strong>
+      </p>
+
+      <p style="margin-top: 20px;">Chúng tôi sẽ sớm liên hệ để xác nhận và giao hàng trong thời gian sớm nhất.</p>
       <p style="font-style: italic; color: #888;">Nếu bạn có bất kỳ thắc mắc nào, hãy liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
 
       <hr style="margin: 20px 0;" />
@@ -219,6 +261,7 @@ if (cart) {
     </div>
   `,
 });
+
     await session.commitTransaction();
     return {
       statusCode: STATUS_CODES.CREATED,
@@ -324,36 +367,80 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
   await order.save();
 
  if (order.user?.email) {
-  await sendMail({
-  to: order.user.email,
-  subject: `Cập nhật trạng thái đơn hàng - ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
-  html: `
-    <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
-      <h2 style="color: #2c3e50;">Xin chào <span style="color:#3498db">${order.user.username}</span>,</h2>
-      <p>Đơn hàng của bạn đã được cập nhật trạng thái như sau:</p>
+ await sendMail({
+      to: order.user.email,
+      subject: `Cập nhật trạng thái đơn hàng - ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
+          <h2 style="color: #2c3e50;">Xin chào <span style="color:#3498db">${order.user.username}</span>,</h2>
+          <p>Đơn hàng của bạn đã được cập nhật trạng thái như sau:</p>
 
-      <table cellpadding="6" cellspacing="0" style="border-collapse: collapse; margin: 10px 0;">
-        <tr>
-          <td><strong>Mã đơn hàng:</strong></td>
-          <td><strong style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></td>
-        </tr>
-        <tr>
-          <td><strong>Trạng thái mới:</strong></td>
-          <td><strong style="color: green;">${order.status}</strong></td>
-        </tr>
-        <tr>
-          <td><strong>Thời gian cập nhật:</strong></td>
-          <td>${new Date().toLocaleString("vi-VN")}</td>
-        </tr>
-      </table>
+          <h3>🧾 Thông tin đơn hàng:</h3>
+          <table cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin: 10px 0;">
+            <tr><td><strong>Mã đơn hàng:</strong></td><td style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</td></tr>
+            <tr><td><strong>Ngày cập nhật:</strong></td><td>${new Date().toLocaleString("vi-VN")}</td></tr>
+            <tr><td><strong>Trạng thái mới:</strong></td><td><strong style="color: green;">${translateStatus(order.status)}</strong></td></tr>
+          </table>
 
-      <p>Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ đội ngũ hỗ trợ Velora.</p>
+          <h3>👤 Thông tin người nhận:</h3>
+          <p>
+            <strong>Họ tên:</strong> ${order.shippingAddress.name || "Không có"}<br/>
+            <strong>SĐT:</strong> ${order.shippingAddress.phone || "Không có"}<br/>
+            <strong>Địa chỉ:</strong> ${order.shippingAddress.addressLine || "Không có"}<br/>
+            <strong>Hình thức thanh toán:</strong> ${
+              order.paymentMethod === "cod"
+                ? "Thanh toán khi nhận hàng"
+                : order.paymentMethod === "vnpay"
+                ? "VNPAY"
+                : "Không xác định"
+            }<br/>
+            <strong>Ghi chú:</strong> ${order.note || 'Không có ghi chú'}
+          </p>
 
-      <hr style="margin: 20px 0;" />
-      <p style="text-align: center; color: #999;">Velora Shop 👟<br/>Cảm ơn bạn đã tin tưởng!</p>
-    </div>
-  `,
-});
+          <h3>📦 Sản phẩm đã đặt:</h3>
+          <table cellpadding="8" cellspacing="0" border="1" style="border-collapse: collapse; width: 100%;">
+            <thead style="background-color: #f2f2f2;">
+              <tr>
+                <th style="text-align: left;">Sản phẩm</th>
+                <th>Phân loại</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items
+                .map(
+                  (item) => `
+                <tr>
+                  <td>${item.productName}</td>
+                  <td>${item.variant.size || ""} ${
+                    item.variant.color ? `- ${item.variant.color}` : ""
+                  }</td>
+                  <td>${item.price.toLocaleString("vi-VN")}₫</td>
+                  <td>${item.quantity}</td>
+                  <td>${(item.price * item.quantity).toLocaleString("vi-VN")}₫</td>
+                </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+
+          <h3>💰 Tổng cộng:</h3>
+          <p>
+            <strong>Tạm tính:</strong> ${order.totalAmount.toLocaleString("vi-VN")}₫ <br/>
+            <strong>Phí vận chuyển:</strong> ${32000 .toLocaleString("vi-VN")}₫ <br/>
+            <strong>Giảm giá:</strong> -${order.discountAmount.toLocaleString("vi-VN")}₫ <br/>
+            <strong style="font-size: 17px;">Tổng thanh toán: <span style="color: #e67e22;">${order.finalAmount.toLocaleString("vi-VN")}₫</span></strong>
+          </p>
+
+          <p style="margin-top: 20px;">Nếu bạn có bất kỳ thắc mắc nào, hãy liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
+
+          <hr style="margin: 20px 0;" />
+          <p style="text-align: center; color: #999;">Velora Shop 👟<br/>Cảm ơn bạn đã tin tưởng!</p>
+        </div>
+      `,
+    });
 
   }
 
@@ -429,20 +516,80 @@ if (order.user._id.toString() !== userId.toString()) {
 if (order.user?.email) {
   await sendMail({
     to: order.user.email,
-    subject: `Hủy đơn hàng ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
+    subject: `Hủy đơn hàng - ORDER-${order._id.toString().slice(-6).toUpperCase()}`,
     html: `
-      <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
-        <h2>Xin chào ${order.user.username},</h2>
-        <p>Đơn hàng của bạn đã được hủy thành công.</p>
-        <p>Mã đơn hàng: <strong>ORDER-${order._id.toString().slice(-6).toUpperCase()}</strong></p>
-        <p>Trạng thái mới: <strong style="color:red">${order.status}</strong></p>
-        <p>Nếu có thắc mắc, vui lòng liên hệ bộ phận CSKH của Velora.</p>
-        <br/>
-        <p>Cảm ơn bạn đã sử dụng Velora!</p>
+      <div style="font-family: Arial, sans-serif; color: #333; font-size: 15px; line-height: 1.6;">
+        <h2 style="color: #2c3e50;">Xin chào <span style="color:#3498db">${order.user.username}</span>,</h2>
+        <p>Chúng tôi xin xác nhận rằng đơn hàng của bạn đã được <strong style="color: red;">hủy</strong> thành công.</p>
+
+        <h3>🧾 Thông tin đơn hàng:</h3>
+        <table cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin: 10px 0;">
+          <tr><td><strong>Mã đơn hàng:</strong></td><td style="color: #e74c3c;">ORDER-${order._id.toString().slice(-6).toUpperCase()}</td></tr>
+          <tr><td><strong>Ngày hủy:</strong></td><td>${new Date().toLocaleString("vi-VN")}</td></tr>
+          <tr><td><strong>Trạng thái mới:</strong></td><td><strong style="color: red;">${translateStatus(order.status)}</strong></td></tr>
+        </table>
+
+        <h3>👤 Thông tin người nhận:</h3>
+        <p>
+          <strong>Họ tên:</strong> ${order.shippingAddress?.name || "Không có"}<br/>
+          <strong>SĐT:</strong> ${order.shippingAddress?.phone || "Không có"}<br/>
+          <strong>Địa chỉ:</strong> ${order.shippingAddress?.addressLine || "Không có"}<br/>
+          <strong>Hình thức thanh toán:</strong> ${
+            order.paymentMethod === "cod"
+              ? "Thanh toán khi nhận hàng"
+              : order.paymentMethod === "vnpay"
+              ? "VNPAY"
+              : "Không xác định"
+          }<br/>
+          <strong>Ghi chú:</strong> ${order.note || "Không có ghi chú"}
+        </p>
+
+        <h3>📦 Sản phẩm đã đặt:</h3>
+        <table cellpadding="8" cellspacing="0" border="1" style="border-collapse: collapse; width: 100%;">
+          <thead style="background-color: #f2f2f2;">
+            <tr>
+              <th style="text-align: left;">Sản phẩm</th>
+              <th>Phân loại</th>
+              <th>Giá</th>
+              <th>Số lượng</th>
+              <th>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items
+              .map(
+                (item) => `
+              <tr>
+                <td>${item.productName}</td>
+                <td>${item.variant.size || ""} ${
+                  item.variant.color ? `- ${item.variant.color}` : ""
+                }</td>
+                <td>${item.price.toLocaleString("vi-VN")}₫</td>
+                <td>${item.quantity}</td>
+                <td>${(item.price * item.quantity).toLocaleString("vi-VN")}₫</td>
+              </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+
+        <h3>💰 Tổng cộng:</h3>
+        <p>
+          <strong>Tạm tính:</strong> ${order.totalAmount.toLocaleString("vi-VN")}₫ <br/>
+          <strong>Phí vận chuyển:</strong> ${32000 .toLocaleString("vi-VN") || "0"}₫ <br/>
+          <strong>Giảm giá:</strong> -${order.discountAmount.toLocaleString("vi-VN")}₫ <br/>
+          <strong style="font-size: 17px;">Tổng thanh toán: <span style="color: #e67e22;">${order.finalAmount.toLocaleString("vi-VN")}₫</span></strong>
+        </p>
+
+        <p style="margin-top: 20px;">Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ đội ngũ hỗ trợ của Velora.</p>
+
+        <hr style="margin: 20px 0;" />
+        <p style="text-align: center; color: #999;">Velora Shop 👟<br/>Cảm ơn bạn đã đồng hành cùng chúng tôi!</p>
       </div>
     `,
   });
 }
+
 
 
   for (const item of order.items) {
