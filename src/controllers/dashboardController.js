@@ -6,69 +6,104 @@ import User from '../models/User.js';
 import Coupon from '../models/Coupon.js';
 import Order from '../models/Order.js';
 
+// Helper: parse ngày đầu vào
+const getDateRange = (query) => {
+  const { from, to } = query;
+
+  if (from && to) {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999);
+    return { fromDate, toDate };
+  }
+
+  return { fromDate: null, toDate: null };
+};
+
+// Helper: Tạo điều kiện createdAt nếu có ngày
+const makeDateFilter = (fromDate, toDate) => {
+  if (fromDate && toDate) {
+    return { $gte: fromDate, $lte: toDate };
+  }
+  return undefined;
+};
+
+// ===============================
+// GET DASHBOARD OVERVIEW
+// ===============================
 export const getDashboardOverview = async (req, res) => {
   try {
+    const { fromDate, toDate } = getDateRange(req.query);
+    const dateFilter = makeDateFilter(fromDate, toDate);
 
-    const range = Number(req.query.range) || 7;
+    const [
+      totalProducts,
+      totalVariants,
+      totalBlogs,
+      totalUsers,
+      totalCoupons,
+      totalOrders,
+      topSellingProducts,
+      totalRevenueResult,
+    ] = await Promise.all([
+      Product.countDocuments({
+        isDeleted: false,
+        ...(dateFilter && { createdAt: dateFilter }),
+      }),
+      ProductVariant.countDocuments({
+        isDeleted: false,
+        ...(dateFilter && { created_at: dateFilter }),
+      }),
+      Blog.countDocuments({
+        isDeleted: false,
+        ...(dateFilter && { createdAt: dateFilter }),
+      }),
+      User.countDocuments({
+        ...(dateFilter && { created_at: dateFilter }),
+      }),
+      Coupon.countDocuments({
+        isDeleted: false,
+        ...(dateFilter && { createdAt: dateFilter }),
+      }),
+      Order.countDocuments({
+        status: 'completed',
+        ...(dateFilter && { createdAt: dateFilter }),
+      }),
+      Product.aggregate([
+        { $match: { isDeleted: false } },
+        {
+          $project: {
+            name: 1,
+            sold: 1,
+            price: 1,
+            totalRevenue: { $multiply: ['$sold', '$price'] },
+          },
+        },
+        { $sort: { sold: -1 } },
+        { $limit: 5 },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            status: 'completed',
+            isDeleted: false,
+            ...(dateFilter && { createdAt: dateFilter }),
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$finalAmount' },
+          },
+        },
+      ]),
+    ]);
 
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - range);
+    const totalRevenue = totalRevenueResult[0]?.total || 0;
 
-  // Bỏ totalRevenueResult khỏi Promise.all
-const [
-  totalProducts,
-  totalVariants,
-  totalBlogs,
-  totalUsers,
-  totalCoupons,
-  totalOrders,
-  topSellingProducts,
-] = await Promise.all([
-  Product.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
-  ProductVariant.countDocuments({ isDeleted: false, created_at: { $gte: fromDate } }),
-  Blog.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
-  User.countDocuments({ created_at: { $gte: fromDate } }),
-  Coupon.countDocuments({ isDeleted: false, createdAt: { $gte: fromDate } }),
-  Order.countDocuments({
-    status: "completed",
-    createdAt: { $gte: fromDate },
-  }),
-  Product.aggregate([
-    { $match: { isDeleted: false } },
-    {
-      $project: {
-        name: 1,
-        sold: 1,
-        price: 1,
-        totalRevenue: { $multiply: ["$sold", "$price"] },
-      },
-    },
-    { $sort: { sold: -1 } },
-    { $limit: 5 },
-  ]),
-]);
-
-
-const totalRevenueResult = await Order.aggregate([
-  {
-    $match: {
-      isDeleted: false,
-      status: "completed"
-    },
-  },
-  {
-    $group: {
-      _id: null,
-      total: { $sum: "$finalAmount" },
-    },
-  },
-]);
-
-const totalRevenue = totalRevenueResult[0]?.total || 0;
-
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Lấy dữ liệu tổng quan thành công",
+      message: 'Tổng quan dashboard',
       data: {
         totalProducts,
         totalVariants,
@@ -77,83 +112,75 @@ const totalRevenue = totalRevenueResult[0]?.total || 0;
         totalCoupons,
         totalOrders,
         totalRevenue,
-        topSellingProducts
-      }
+        topSellingProducts,
+      },
     });
   } catch (error) {
-    console.error("Lỗi dashboard overview:", error);
-    return res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
+    console.error('Lỗi dashboard overview:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
   }
 };
 
+// ===============================
+// GET REVENUE BY FILTER
+// ===============================
 export const getRevenueByFilter = async (req, res) => {
   try {
-    const { range = 7 } = req.query;
-    const days = Number(range);
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - days);
+    const { fromDate, toDate } = getDateRange(req.query);
+    const dateFilter = makeDateFilter(fromDate, toDate);
 
-
-    // Bỏ isDeleted vì bạn không dùng soft delete
-    const ordersTest = await Order.find({
-      status: "completed",
-      createdAt: { $gte: fromDate },
-    });
+    const matchFilter = {
+      status: 'completed',
+      ...(dateFilter && { createdAt: dateFilter }),
+    };
 
     const revenues = await Order.aggregate([
-      {
-        $match: {
-          status: "completed",
-          createdAt: { $gte: fromDate },
-        },
-      },
+      { $match: matchFilter },
       {
         $group: {
-          _id: { $dateToString: { format: "%d/%m", date: "$createdAt" } },
-          revenue: { $sum: "$finalAmount" },
+          _id: { $dateToString: { format: '%d/%m', date: '$createdAt' } },
+          revenue: { $sum: '$finalAmount' },
         },
       },
       { $sort: { _id: 1 } },
     ]);
 
-
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: `Doanh thu ${days} ngày gần nhất`,
+      message: fromDate && toDate
+        ? `Doanh thu từ ${fromDate.toLocaleDateString()} đến ${toDate.toLocaleDateString()}`
+        : 'Doanh thu tổng',
       data: revenues,
     });
   } catch (error) {
-    console.error("Lỗi getRevenueByFilter:", error);
-    res.status(500).json({ success: false, message: "Lỗi server" });
+    console.error('Lỗi getRevenueByFilter:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
 
-
-
+// ===============================
+// GET TOP SELLING PRODUCTS
+// ===============================
 export const getTopSellingProducts = async (req, res) => {
   try {
-    const limit = Number(req.query.limit) || 12;
-    const range = req.query.range || "month";
+    const { limit = 12 } = req.query;
+    const { fromDate, toDate } = getDateRange(req.query);
+    const dateFilter = makeDateFilter(fromDate, toDate);
 
-  // Tính ngày bắt đầu theo range
-    const fromDate = new Date();
-    if (range === "day") {
-      fromDate.setHours(0, 0, 0, 0); // từ đầu ngày hôm nay
-    } else if (range === "week") {
-      fromDate.setDate(fromDate.getDate() - 7);
-    } else if (range === "month") {
-      fromDate.setDate(fromDate.getDate() - 30);
-    }
+    const matchFilter = {
+      status: 'completed',
+      ...(dateFilter && { createdAt: dateFilter }),
+    };
 
     const result = await Order.aggregate([
-      { $match: { status: "completed",  createdAt: { $gte: fromDate } } }, // Chỉ lấy đơn hàng đã hoàn tất
-      { $unwind: "$items" }, // Tách từng sản phẩm trong đơn
+      { $match: matchFilter },
+      { $unwind: '$items' },
       {
         $group: {
-          _id: "$items.productId",
-          sold: { $sum: "$items.quantity" },
-          price: { $first: "$items.price" }, // Lấy giá tại thời điểm bán (snapshot)
-          name: { $first: "$items.productName" }, // Lấy tên snapshot
+          _id: '$items.productId',
+          sold: { $sum: '$items.quantity' },
+          price: { $first: '$items.price' },
+          name: { $first: '$items.productName' },
         },
       },
       {
@@ -161,20 +188,22 @@ export const getTopSellingProducts = async (req, res) => {
           name: 1,
           sold: 1,
           price: 1,
-          totalRevenue: { $multiply: ["$sold", "$price"] },
+          totalRevenue: { $multiply: ['$sold', '$price'] },
         },
       },
       { $sort: { sold: -1 } },
-      { $limit: limit },
+      { $limit: Number(limit) },
     ]);
 
     res.status(200).json({
       success: true,
-      message: `Top ${limit} sản phẩm bán chạy theo khoảng: ${range}`,
+      message: fromDate && toDate
+        ? `Top ${limit} sản phẩm bán chạy từ ${fromDate.toLocaleDateString()} đến ${toDate.toLocaleDateString()}`
+        : `Top ${limit} sản phẩm bán chạy tổng cộng`,
       data: result,
     });
   } catch (error) {
-    console.error("Lỗi getTopSellingProducts:", error);
-    res.status(500).json({ success: false, message: "Lỗi server" });
+    console.error('Lỗi getTopSellingProducts:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
