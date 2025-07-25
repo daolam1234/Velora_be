@@ -3,6 +3,7 @@ import { verifyToken, verifyAdmin } from "../middlewares/auth.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 import { STATUS_CODES } from "../constant/statusCodes.js";
 import { AUTH_MESSAGES } from "../constant/messages.js";
+import { sendMail } from "../service/mail.service.js";
 
 export const getUser = async (req, res) => {
     try {
@@ -263,5 +264,70 @@ export const resetPassword = async (req, res) => {
     return res.status(200).json({ message: 'Mật khẩu đã được cập nhật thành công' });
   } catch (error) {
     return res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+
+const otpStorage = {};
+
+// Hàm gửi OTP
+export const sendOtpToEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Email không tồn tại." });
+
+    // Tạo mã OTP ngẫu nhiên 6 số
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Lưu OTP vào bộ nhớ tạm với thời gian hết hạn (5 phút)
+    otpStorage[email] = {
+      otp,
+      expire: Date.now() + 5 * 60 * 1000 // 5 phút
+    };
+
+    // Gửi mail chứa OTP
+await sendMail({
+  to: email,
+  subject: "Mã OTP khôi phục mật khẩu",
+  html: `<p>Mã xác thực của bạn là: <b>${otp}</b></p>`,
+});
+
+    return res.status(200).json({ message: "Đã gửi mã xác thực đến email." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Lỗi khi gửi mã OTP." });
+  }
+};
+
+
+export const verifyOtpAndResetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const record = otpStorage[email];
+    if (!record) return res.status(400).json({ message: "Không tìm thấy mã OTP cho email này." });
+
+    if (Date.now() > record.expire) {
+      delete otpStorage[email];
+      return res.status(400).json({ message: "Mã OTP đã hết hạn." });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "Mã OTP không đúng." });
+    }
+
+    // Mã đúng → Cập nhật mật khẩu mới
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await User.findOneAndUpdate({ email }, { password: hashed });
+
+    // Xoá OTP sau khi dùng
+    delete otpStorage[email];
+
+    return res.status(200).json({ message: "Đặt lại mật khẩu thành công." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Lỗi khi xác minh OTP." });
   }
 };

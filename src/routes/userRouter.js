@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUser, updateUser, getDetailUser, updateUserStatus, updatePassword, addUser, resetPassword } from "../controllers/userController.js";
+import { getUser, updateUser, getDetailUser, updateUserStatus, updatePassword, addUser, resetPassword, sendOtpToEmail, verifyOtpAndResetPassword } from "../controllers/userController.js";
 
 const userRouter = Router();
 userRouter.get("/", getUser);
@@ -11,5 +11,8 @@ userRouter.post("/reset-password", resetPassword);
 
 userRouter.patch("/update-password", updatePassword);
 userRouter.post("/add", addUser);
+
+userRouter.post("/forgot-password/send-otp", sendOtpToEmail);
+userRouter.post("/forgot-password/verify-otp", verifyOtpAndResetPassword);
 
 export default userRouter;
