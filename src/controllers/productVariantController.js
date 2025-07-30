@@ -6,7 +6,7 @@ import { createVariantSchema, updateVariantSchema } from '../validation/productV
 
 export const getProductVariants = async (req, res) => {
   try {
-    const { product_id, color ,page = 1, limit = 10, isDeleted } = req.query;
+    const { product_id, color ,page = 1, limit = 500, isDeleted } = req.query;
 
     const filter = {};
      if (color) {
@@ -32,6 +32,7 @@ export const getProductVariants = async (req, res) => {
     }
 
     const variants = await ProductVariant.find(filter)
+       .sort({ created_at: -1 })  //Sắp xếp ngày tạo giảm dần biến thể mới lên đầu
       .skip(skip)
       .limit(limitNumber)
       .populate('product_id');

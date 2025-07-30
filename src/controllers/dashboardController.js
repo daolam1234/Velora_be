@@ -158,9 +158,8 @@ export const getRevenueByFilter = async (req, res) => {
   }
 };
 
-// ===============================
-// GET TOP SELLING PRODUCTS
-// ===============================
+
+
 export const getTopSellingProducts = async (req, res) => {
   try {
     const { limit = 12 } = req.query;
@@ -184,11 +183,43 @@ export const getTopSellingProducts = async (req, res) => {
         },
       },
       {
+        $addFields: {
+          productObjectId: {
+            $cond: [
+              { $eq: [{ $type: '$_id' }, 'objectId'] },
+              '$_id',
+              { $toObjectId: '$_id' },
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productObjectId',
+          foreignField: '_id',
+          as: 'productInfo',
+        },
+      },
+      // ✅ Bỏ qua sản phẩm đã xóa vĩnh viễn (không còn trong products)
+      {
+        $match: {
+          productInfo: { $ne: [] },
+        },
+      },
+      { $unwind: '$productInfo' },
+      {
         $project: {
           name: 1,
           sold: 1,
           price: 1,
           totalRevenue: { $multiply: ['$sold', '$price'] },
+          image: {
+            $ifNull: [
+              { $arrayElemAt: ['$productInfo.images', 0] },
+              '$productInfo.thumbnail',
+            ],
+          },
         },
       },
       { $sort: { sold: -1 } },
@@ -207,3 +238,4 @@ export const getTopSellingProducts = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
+

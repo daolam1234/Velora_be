@@ -364,6 +364,20 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
   }
 
   order.status = newStatus;
+
+  //Hủy đơn hàng ở admin thì sẽ trả về số lượng tồn kho
+if (newStatus === "cancelled" && ["pending","confirmed", "processing", "shipping"].includes(currentStatus)) {
+ for (const item of order.items) {
+    const variant = await ProductVariant.findById(item.variantId);
+    if (variant) {
+      variant.stock_quantity += item.quantity;
+      await variant.save();
+    }
+  }
+}
+
+
+ 
   await order.save();
 
  if (order.user?.email) {
