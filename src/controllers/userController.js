@@ -331,3 +331,101 @@ export const verifyOtpAndResetPassword = async (req, res) => {
     return res.status(500).json({ message: "Lỗi khi xác minh OTP." });
   }
 };
+
+
+//Hàm xóa mềm
+export const softDeleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+
+    if (user.is_deleted) {
+      return res.status(400).json({ message: "Người dùng đã bị xóa mềm trước đó." });
+    }
+
+    user.is_deleted = true;
+    user.updated_at = new Date();
+
+    await user.save();
+
+    return res.status(200).json({ message: "Xóa mềm người dùng thành công.", user });
+  } catch (error) {
+    return res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+
+//Hàm xóa cứng
+export const forceDeleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findOne({ _id: id, is_deleted: true });
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng trong thùng rác." });
+    }
+
+    await User.deleteOne({ _id: id });
+
+    return res.status(200).json({ message: "Xóa vĩnh viễn người dùng thành công." });
+  } catch (error) {
+    return res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+//Lấy danh sách xóa mềm
+export const getDeletedUsers = async (req, res) => {
+  try {
+    await verifyToken(req, res, async () => {
+      await verifyAdmin(req, res, async () => {
+        const deletedUsers = await User.find({ is_deleted: true });
+
+        return res.status(200).json({
+          message: "Lấy danh sách người dùng đã bị xóa mềm thành công.",
+          users: deletedUsers,
+        });
+      });
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Lỗi server khi lấy danh sách người dùng đã bị xóa mềm.",
+      error: error.message,
+    });
+  }
+};
+
+
+//Khôi phục
+export const restoreUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findOne({ _id: id, is_deleted: true });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy người dùng đã bị xóa mềm." });
+    }
+
+    user.is_deleted = false;
+    user.updated_at = new Date();
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Khôi phục người dùng thành công.",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Lỗi server khi khôi phục người dùng.",
+      error: error.message,
+    });
+  }
+};

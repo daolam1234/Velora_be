@@ -28,13 +28,14 @@ const makeDateFilter = (fromDate, toDate) => {
   return undefined;
 };
 
-// ===============================
-// GET DASHBOARD OVERVIEW
-// ===============================
+
 export const getDashboardOverview = async (req, res) => {
   try {
     const { fromDate, toDate } = getDateRange(req.query);
     const dateFilter = makeDateFilter(fromDate, toDate);
+
+    const usersStillExists = await User.find({}, '_id');
+const validUserIds = usersStillExists.map((u) => u._id);
 
     const [
       totalProducts,
@@ -59,16 +60,18 @@ export const getDashboardOverview = async (req, res) => {
         ...(dateFilter && { createdAt: dateFilter }),
       }),
       User.countDocuments({
+        is_deleted: false,
         ...(dateFilter && { created_at: dateFilter }),
+        
       }),
       Coupon.countDocuments({
         isDeleted: false,
         ...(dateFilter && { createdAt: dateFilter }),
       }),
-      Order.countDocuments({
-        status: 'completed',
-        ...(dateFilter && { createdAt: dateFilter }),
-      }),
+       Order.countDocuments({
+    status: 'completed',
+    ...(dateFilter && { createdAt: dateFilter }),
+  }),
       Product.aggregate([
         { $match: { isDeleted: false } },
         {
@@ -83,20 +86,19 @@ export const getDashboardOverview = async (req, res) => {
         { $limit: 5 },
       ]),
       Order.aggregate([
-        {
-          $match: {
-            status: 'completed',
-            isDeleted: false,
-            ...(dateFilter && { createdAt: dateFilter }),
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: '$finalAmount' },
-          },
-        },
-      ]),
+    {
+      $match: {
+        status: 'completed',
+        ...(dateFilter && { createdAt: dateFilter }),
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$finalAmount' },
+      },
+    },
+  ]),
     ]);
 
     const totalRevenue = totalRevenueResult[0]?.total || 0;
@@ -121,9 +123,7 @@ export const getDashboardOverview = async (req, res) => {
   }
 };
 
-// ===============================
-// GET REVENUE BY FILTER
-// ===============================
+
 export const getRevenueByFilter = async (req, res) => {
   try {
     const { fromDate, toDate } = getDateRange(req.query);

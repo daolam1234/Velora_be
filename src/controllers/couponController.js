@@ -244,3 +244,25 @@ export const validateCouponForUser = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
+
+// Xóa vĩnh viễn coupon
+export const permanentlyDeleteCoupon = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const coupon = await Coupon.findByIdAndDelete(id);
+
+    if (!coupon) {
+      return res.status(404).json({ status: false, message: "Coupon không tồn tại" });
+    }
+
+    return res.json({ status: true, message: "Coupon đã được xóa vĩnh viễn", data: coupon });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      message: "Lỗi server khi xóa vĩnh viễn coupon",
+      error: error.message
+    });
+  }
+};

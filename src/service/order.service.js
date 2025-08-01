@@ -294,13 +294,21 @@ export const getOrdersByUserService = async (userId) => {
 };
 
 export const getOrdersService = async () => {
-  const orders = await Order.find().sort({ createdAt: -1 }).populate("user", "full_name");
+  const orders = await Order.find()
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "user", // Nếu tên trong model là "user"
+      select: "full_name",
+      options: { strictPopulate: false }, // ✅ Cho phép populate cả khi user đã bị xóa
+    });
+
   return {
     message: ORDER_MESSAGES.GET_ORDERS_SUCCESS,
     status: true,
     data: orders,
   };
 };
+
 
 //tìm theo id đơn hàng
 export const getOrderByIdService = async (orderId, user) => {
@@ -351,6 +359,15 @@ export const updateOrderStatusService = async (orderId, newStatus) => {
       message: "Đơn hàng không tồn tại",
     };
   }
+
+  // ✅ Chặn cập nhật nếu người dùng đã bị xóa
+if (!order.user) {
+  return {
+    statusCode: STATUS_CODES.BAD_REQUEST,
+    success: false,
+    message: "Không thể cập nhật đơn hàng vì người dùng đã bị xoá",
+  };
+}
 
   const currentStatus = order.status;
   const allowed = allowedTransitions[currentStatus] || [];

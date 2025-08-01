@@ -7,6 +7,7 @@ import {
   getCoupons,
   getDeletedCoupons,
   getPublicCoupons,
+  permanentlyDeleteCoupon,
   restoreCoupon,
   softDeleteCoupon,
   updateCoupon,
@@ -34,5 +35,7 @@ couponRouter.delete("/:id", deleteCoupon); //Vô hiệu hoá coupon
 couponRouter.delete("/softDelete/:id", softDeleteCoupon); //xoá mềm
 //patch
 couponRouter.patch("/restore/:id", restoreCoupon); // Khôi phục
+
+couponRouter.delete('/permanent/:id', permanentlyDeleteCoupon); //Xóa vĩnh viễn
 
 export default couponRouter;
