@@ -7,12 +7,14 @@ const productVariantSchema = new mongoose.Schema({
     required: true
   },
   size: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+     ref: 'Attribute',
     required: true,
     maxlength: 10
   },
   color: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+     ref: 'Attribute',
     required: true,
     maxlength: 50
   },

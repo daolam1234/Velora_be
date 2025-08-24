@@ -14,6 +14,7 @@ import dashboardRouter from "./dashboardRouter.js";
 import reviewRouter from './reviewRouter.js';
 import uploadRouter from "./upload.js";
 import bannerRouter from "./bannerRouter.js";
+import attributeRouter from "./attributeRouter.js";
 
 const routes = Router();
 
@@ -23,6 +24,7 @@ routes.use("/auth", authRouter)
 routes.use("/users", userRouter)
 routes.use("/wishlist", wishlistRouter);
 routes.use("/productvariants", productVariantRouter)
+routes.use("/attributes", attributeRouter)
 routes.use("/cart", cartRouter);
 routes.use("/coupons", couponRouter);
 routes.use("/orders", OrderRouter);
