@@ -2,7 +2,7 @@ import Product from '../models/Product.js';
 import ProductReview from '../models/ProductReview.js';
 import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
 import User from '../models/User.js';
-
+import Order from '../models/Order.js';
 
 export const addProductReview = async (req, res) => {
 
@@ -25,6 +25,53 @@ export const addProductReview = async (req, res) => {
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ message: "Không tìm thấy người dùng" });
+      }
+
+      // Kiểm tra xem người dùng đã mua sản phẩm này chưa
+      const hasPurchased = await Order.findOne({
+        user: userId,
+        'items.productId': product_id,
+        status: { $in: ['completed', 'shipped'] } // Chỉ cho phép bình luận khi đơn hàng đã hoàn thành hoặc đã giao
+      });
+
+      if (!hasPurchased) {
+        return res.status(403).json({ 
+          message: "Bạn chỉ có thể bình luận sau khi đã mua và nhận được sản phẩm này" 
+        });
+      }
+
+      // Kiểm tra xem người dùng đã bình luận sản phẩm này chưa (chỉ áp dụng cho bình luận gốc, không phải reply)
+      if (!parent_id) {
+        const existingReview = await ProductReview.findOne({
+          product_id,
+          user_name: user.username,
+          parent_id: null
+        });
+
+        if (existingReview) {
+          return res.status(400).json({ 
+            message: "Bạn đã bình luận sản phẩm này rồi. Chỉ có thể bình luận một lần cho mỗi sản phẩm." 
+          });
+        }
+      }
+
+ 
+
+      // Kiểm tra giới hạn số lượng bình luận mỗi ngày (tối đa 10 bình luận/ngày)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const dailyReviewCount = await ProductReview.countDocuments({
+        user_name: user.username,
+        createdAt: { $gte: today, $lt: tomorrow }
+      });
+
+      if (dailyReviewCount >= 10) {
+        return res.status(429).json({ 
+          message: "Bạn đã đạt giới hạn 10 bình luận mỗi ngày. Vui lòng thử lại vào ngày mai." 
+        });
       }
 
       if (parent_id) {
