@@ -1,14 +1,12 @@
-import Product from '../models/Product.js';
-import ProductReview from '../models/ProductReview.js';
-import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
-import User from '../models/User.js';
-import Order from '../models/Order.js';
+import Product from "../models/Product.js";
+import ProductReview from "../models/ProductReview.js";
+import { verifyToken, verifyAdmin } from "../middlewares/auth.js";
+import User from "../models/User.js";
+import Order from "../models/Order.js";
 
 export const addProductReview = async (req, res) => {
-
   verifyToken(req, res, async () => {
     try {
-
       const { comment, parent_id = null } = req.body;
       const userId = req.user?._id;
       const product_id = req.params.product_id;
@@ -17,9 +15,14 @@ export const addProductReview = async (req, res) => {
         return res.status(400).json({ message: "Thiếu thông tin bình luận" });
       }
 
-      const product = await Product.findOne({ _id: product_id, isDeleted: false });
+      const product = await Product.findOne({
+        _id: product_id,
+        isDeleted: false,
+      });
       if (!product) {
-        return res.status(404).json({ message: "Sản phẩm không tồn tại hoặc đã bị xóa" });
+        return res
+          .status(404)
+          .json({ message: "Sản phẩm không tồn tại hoặc đã bị xóa" });
       }
 
       const user = await User.findById(userId);
@@ -30,13 +33,14 @@ export const addProductReview = async (req, res) => {
       // Kiểm tra xem người dùng đã mua sản phẩm này chưa
       const hasPurchased = await Order.findOne({
         user: userId,
-        'items.productId': product_id,
-        status: { $in: ['completed', 'shipped'] } // Chỉ cho phép bình luận khi đơn hàng đã hoàn thành hoặc đã giao
+        "items.productId": product_id,
+        status: { $in: ["completed", "shipped"] }, // Chỉ cho phép bình luận khi đơn hàng đã hoàn thành hoặc đã giao
       });
 
       if (!hasPurchased) {
-        return res.status(403).json({ 
-          message: "Bạn chỉ có thể bình luận sau khi đã mua và nhận được sản phẩm này" 
+        return res.status(403).json({
+          message:
+            "Bạn chỉ có thể bình luận sau khi đã mua và nhận được sản phẩm này",
         });
       }
 
@@ -45,17 +49,16 @@ export const addProductReview = async (req, res) => {
         const existingReview = await ProductReview.findOne({
           product_id,
           user_name: user.username,
-          parent_id: null
+          parent_id: null,
         });
 
         if (existingReview) {
-          return res.status(400).json({ 
-            message: "Bạn đã bình luận sản phẩm này rồi. Chỉ có thể bình luận một lần cho mỗi sản phẩm." 
+          return res.status(400).json({
+            message:
+              "Bạn đã bình luận sản phẩm này rồi. Chỉ có thể bình luận một lần cho mỗi sản phẩm.",
           });
         }
       }
-
- 
 
       // Kiểm tra giới hạn số lượng bình luận mỗi ngày (tối đa 10 bình luận/ngày)
       const today = new Date();
@@ -65,19 +68,22 @@ export const addProductReview = async (req, res) => {
 
       const dailyReviewCount = await ProductReview.countDocuments({
         user_name: user.username,
-        createdAt: { $gte: today, $lt: tomorrow }
+        createdAt: { $gte: today, $lt: tomorrow },
       });
 
       if (dailyReviewCount >= 10) {
-        return res.status(429).json({ 
-          message: "Bạn đã đạt giới hạn 10 bình luận mỗi ngày. Vui lòng thử lại vào ngày mai." 
+        return res.status(429).json({
+          message:
+            "Bạn đã đạt giới hạn 10 bình luận mỗi ngày. Vui lòng thử lại vào ngày mai.",
         });
       }
 
       if (parent_id) {
         const parentReview = await ProductReview.findById(parent_id);
         if (!parentReview) {
-          return res.status(404).json({ message: "Bình luận gốc không tồn tại" });
+          return res
+            .status(404)
+            .json({ message: "Bình luận gốc không tồn tại" });
         }
       }
 
@@ -90,11 +96,15 @@ export const addProductReview = async (req, res) => {
 
       await newReview.save();
 
-      return res.status(201).json({ message: "Gửi bình luận thành công", review: newReview });
+      return res
+        .status(201)
+        .json({ message: "Gửi bình luận thành công", review: newReview });
     } catch (error) {
-  console.error("Lỗi khi thêm bình luận:", error); // ← THÊM DÒNG NÀY
-  return res.status(500).json({ message: "Lỗi server", error: error.message });
-}
+      console.error("Lỗi khi thêm bình luận:", error); // ← THÊM DÒNG NÀY
+      return res
+        .status(500)
+        .json({ message: "Lỗi server", error: error.message });
+    }
   });
 };
 
@@ -102,10 +112,17 @@ export const getAllProductReviews = async (req, res) => {
   verifyToken(req, res, async () => {
     verifyAdmin(req, res, async () => {
       try {
-        const reviews = await ProductReview.find().populate('product_id', 'name');
-        return res.status(200).json({ message: 'Lấy tất cả bình luận thành công', reviews });
+        const reviews = await ProductReview.find().populate(
+          "product_id",
+          "name"
+        );
+        return res
+          .status(200)
+          .json({ message: "Lấy tất cả bình luận thành công", reviews });
       } catch (error) {
-        return res.status(500).json({ message: 'Lỗi server', error: error.message });
+        return res
+          .status(500)
+          .json({ message: "Lỗi server", error: error.message });
       }
     });
   });
@@ -117,20 +134,23 @@ export const deleteProductReview = async (req, res) => {
       try {
         const reviewId = req.params.review_id;
         if (!reviewId) {
-          return res.status(400).json({ message: 'Thiếu review_id' });
+          return res.status(400).json({ message: "Thiếu review_id" });
         }
         const deleted = await ProductReview.findByIdAndDelete(reviewId);
         if (!deleted) {
-          return res.status(404).json({ message: 'Không tìm thấy bình luận để xoá' });
+          return res
+            .status(404)
+            .json({ message: "Không tìm thấy bình luận để xoá" });
         }
-        return res.status(200).json({ message: 'Xoá bình luận thành công' });
+        return res.status(200).json({ message: "Xoá bình luận thành công" });
       } catch (error) {
-        return res.status(500).json({ message: 'Lỗi server', error: error.message });
+        return res
+          .status(500)
+          .json({ message: "Lỗi server", error: error.message });
       }
     });
   });
 };
-
 
 export const getReviewsByProductId = async (req, res) => {
   try {
@@ -142,6 +162,56 @@ export const getReviewsByProductId = async (req, res) => {
     const reviews = await ProductReview.find({ product_id });
     return res.status(200).json({ reviews });
   } catch (error) {
-    return res.status(500).json({ message: 'Lỗi server', error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+export const adminReplyReview = async (req, res) => {
+  try {
+    const { review_id } = req.params; // ID bình luận gốc
+    const { comment } = req.body; // Nội dung reply
+    const adminId = req.user._id; // ID admin đã được verify trong middleware verifyAdmin
+
+    // Kiểm tra nội dung reply
+    if (!comment || !comment.trim()) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng nhập nội dung trả lời" });
+    }
+
+    // Lấy bình luận gốc
+    const parentReview = await ProductReview.findById(review_id);
+    if (!parentReview) {
+      return res.status(404).json({ message: "Bình luận gốc không tồn tại" });
+    }
+
+    // Kiểm tra admin
+    const admin = await User.findById(adminId);
+    if (!admin || admin.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Chỉ admin mới có quyền trả lời" });
+    }
+
+    // Tạo reply
+    const reply = new ProductReview({
+      product_id: parentReview.product_id,
+      user_name: admin.username, // hiển thị tên admin
+      comment,
+      parent_id: review_id, // liên kết đến bình luận gốc
+    });
+
+    await reply.save();
+
+    return res
+      .status(201)
+      .json({ message: "Admin đã trả lời bình luận", reply });
+  } catch (error) {
+    console.error("Lỗi adminReplyReview:", error);
+    return res
+      .status(500)
+      .json({ message: "Lỗi server", error: error.message });
   }
 };
