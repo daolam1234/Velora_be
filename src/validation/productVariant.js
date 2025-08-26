@@ -1,65 +1,61 @@
-import Joi from 'joi';
+import Joi from "joi";
+import mongoose from "mongoose";
+
+// Custom validator cho ObjectId
+const objectId = (value, helpers) => {
+  if (!mongoose.Types.ObjectId.isValid(value)) {
+    return helpers.error("any.invalid");
+  }
+  return value;
+};
 
 export const createVariantSchema = Joi.object({
   product_id: Joi.string()
+    .custom(objectId)
     .required()
-    .regex(/^[0-9a-fA-F]{24}$/)
-    .message('product_id không hợp lệ'),
+    .messages({
+      "any.invalid": "product_id không hợp lệ",
+      "any.required": "product_id là bắt buộc",
+    }),
 
   size: Joi.string()
-    .max(10)
-    .required(),
-  color: Joi.string().max(50).required(),
-  image: Joi.string().uri().required(),
+    .custom(objectId)
+    .required()
+    .messages({
+      "any.invalid": "size_id không hợp lệ",
+      "any.required": "size là bắt buộc",
+    }),
+
+  color: Joi.string()
+    .custom(objectId)
+    .required()
+    .messages({
+      "any.invalid": "color_id không hợp lệ",
+      "any.required": "color là bắt buộc",
+    }),
+
+image: Joi.string().allow(null, "").optional(),
   images: Joi.array().items(Joi.string().uri()).optional(),
 
-  sku: Joi.string()
-    .max(100)
-    .required(),
-
-  price: Joi.number()
-    .min(0)
-    .required(),
+  sku: Joi.string().max(100).required(),
+  price: Joi.number().min(0).required(),
   discount_price: Joi.number().min(0).optional(),
-
-  stock_quantity: Joi.number()
-    .integer()
-    .min(0)
-    .required(),
+  stock_quantity: Joi.number().integer().min(0).required(),
 
   is_available: Joi.boolean().optional(),
-
   isDeleted: Joi.boolean().optional(),
 });
 
 export const updateVariantSchema = Joi.object({
-  product_id: Joi.string()
-    .regex(/^[0-9a-fA-F]{24}$/)
-    .message('product_id không hợp lệ')
-    .optional(),
-
-  size: Joi.string()
-    .max(10)
-    .optional(),
-color: Joi.string().max(50).required(),
-image: Joi.string().uri().required(),
+  product_id: Joi.string().custom(objectId).optional(),
+  size: Joi.string().custom(objectId).optional(),
+  color: Joi.string().custom(objectId).optional(),
+  image: Joi.string().uri().optional(),
   images: Joi.array().items(Joi.string().uri()).optional(),
-
-  sku: Joi.string()
-    .max(100)
-    .optional(),
-
-  price: Joi.number()
-    .min(0)
-    .optional(),
+  sku: Joi.string().max(100).optional(),
+  price: Joi.number().min(0).optional(),
   discount_price: Joi.number().min(0).optional(),
-
-  stock_quantity: Joi.number()
-    .integer()
-    .min(0)
-    .optional(),
-
+  stock_quantity: Joi.number().integer().min(0).optional(),
   is_available: Joi.boolean().optional(),
-
   isDeleted: Joi.boolean().optional(),
-}).min(1); // ít nhất 1 trường phải có
+}).min(1);

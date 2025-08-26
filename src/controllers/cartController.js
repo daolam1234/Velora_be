@@ -404,6 +404,10 @@ export const getCart = async (req, res, next) => {
         path: "items.variant",
         select:
           "size price stock_quantity sku color discount_price image images",
+           populate: [
+      { path: "color", select: "value" },
+      { path: "size", select: "value" },
+    ],
       });
     if (!cart) {
       return sendSuccess(res, { products: [] }, CART_MESSAGES.EMPTY_CART);

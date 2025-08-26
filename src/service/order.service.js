@@ -46,7 +46,9 @@ export const createOrderService = async (req) => {
       let selectedVariant = null;
 
       if (variantId) {
-        selectedVariant = await ProductVariant.findById(variantId);
+        selectedVariant = await ProductVariant.findById(variantId) 
+            .populate("size")  
+            .populate("color"); 
         if (!selectedVariant) {
           await session.abortTransaction();
           aborted = true;
@@ -89,10 +91,11 @@ export const createOrderService = async (req) => {
         productImage: selectedVariant?.image || product.images?.[0] || null,
         productName: product.name,
         variantId: selectedVariant._id,
-        variant: {
-          size: selectedVariant?.size || null,
-          color: selectedVariant?.color || null,
-        },
+variant: {
+  size: selectedVariant?.size?.value || selectedVariant?.size || null,
+  color: selectedVariant?.color?.value || selectedVariant?.color || null,
+},
+
         quantity: item.quantity,
         price: discountPrice,
       });

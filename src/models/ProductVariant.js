@@ -20,7 +20,7 @@ const productVariantSchema = new mongoose.Schema({
   },
   image: {
     type: String, // Ảnh đại diện thumbnail
-    required: true
+    required: false
   },
   images: {
     type: [String], // Danh sách các ảnh con

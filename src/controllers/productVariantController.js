@@ -35,7 +35,9 @@ export const getProductVariants = async (req, res) => {
        .sort({ created_at: -1 })  //Sắp xếp ngày tạo giảm dần biến thể mới lên đầu
       .skip(skip)
       .limit(limitNumber)
-      .populate('product_id');
+       .populate('product_id', 'name')      // chỉ lấy name
+  .populate('size', 'value')            // lấy name của size
+  .populate('color', 'value');
 
     return res.status(STATUS_CODES.OK).json({
       success: true,
@@ -55,7 +57,10 @@ export const getProductVariants = async (req, res) => {
 export const getVariantById = async (req, res) => {
   const { id } = req.params;
   try {
-    const variant = await ProductVariant.findOne({ _id: id, isDeleted: false }).populate('product_id');
+    const variant = await ProductVariant.findOne({ _id: id, isDeleted: false })
+    .populate('product_id', 'name') 
+    .populate('size', 'value')        // chỉ lấy field value
+    .populate('color', 'value');
     if (!variant) {
       return res.status(STATUS_CODES.OK).json({ message: 'Không tìm thấy biến thể', variant: [] });
     }
